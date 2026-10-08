@@ -1,0 +1,138 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+enum Role {
+  STUDENT
+  KITCHEN
+  ADMIN
+}
+
+enum ReservationStatus {
+  PENDING
+  CONFIRMED
+  CONSUMED
+  CANCELLED
+  NO_SHOW
+}
+
+enum ForecastMethod {
+  STAT
+  FALLBACK
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String
+  role      Role
+  createdAt DateTime @default(now())
+
+  reservations Reservation[]
+}
+
+model Meal {
+  id          String   @id @default(cuid())
+  name        String
+  description String
+  category    String
+  priceCents  Int
+  imageUrl    String
+  allergens   String   // JSON stringified
+
+  menuItems      MenuItem[]
+  kitchenBatches KitchenBatch[]
+  forecasts      Forecast[]
+}
+
+model MenuItem {
+  id        String   @id @default(cuid())
+  mealId    String
+  date      DateTime
+  available Boolean
+
+  meal         Meal          @relation(fields: [mealId], references: [id])
+  reservations Reservation[]
+
+  @@unique([mealId, date])
+}
+
+model Slot {
+  id            String   @id @default(cuid())
+  date          DateTime
+  startTime     String
+  endTime       String
+  capacity      Int
+  reservedCount Int      @default(0)
+
+  reservations Reservation[]
+}
+
+model Reservation {
+  id             String            @id @default(cuid())
+  userId         String
+  menuItemId     String
+  slotId         String
+  status         ReservationStatus
+  qrToken        String
+  idempotencyKey String            @unique
+  createdAt      DateTime          @default(now())
+  consumedAt     DateTime?
+
+  user     User     @relation(fields: [userId], references: [id])
+  menuItem MenuItem @relation(fields: [menuItemId], references: [id])
+  slot     Slot     @relation(fields: [slotId], references: [id])
+
+  activeKey String? @unique // Rempli avec `${userId}-${slotId}-${menuItemId}` quand PENDING/CONFIRMED, null sinon
+}
+
+model KitchenBatch {
+  id             String   @id @default(cuid())
+  date           DateTime
+  mealId         String
+  predictedCount Int
+  preparedCount  Int
+  status         String
+
+  meal Meal @relation(fields: [mealId], references: [id])
+
+  @@unique([date, mealId])
+}
+
+model Forecast {
+  id             String         @id @default(cuid())
+  date           DateTime
+  mealId         String
+  predictedCount Int
+  lower          Int
+  upper          Int
+  method         ForecastMethod
+  createdAt      DateTime       @default(now())
+
+  meal Meal @relation(fields: [mealId], references: [id])
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  actorId   String
+  action    String
+  entity    String
+  entityId  String
+  requestId String
+  createdAt DateTime @default(now())
+}
+
+model ChaosRun {
+  id         String   @id @default(cuid())
+  caseId     String
+  expected   String
+  actual     String
+  passed     Boolean
+  durationMs Int
+  createdAt  DateTime @default(now())
+}

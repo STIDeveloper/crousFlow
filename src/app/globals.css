@@ -1,26 +1,79 @@
 @import "tailwindcss";
+@plugin "tailwindcss-animate";
+@import "shadcn/tailwind.css";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+@custom-variant dark (&:is(.dark *));
+
+@theme {
+  --color-paper: oklch(0.98 0.01 70);
+  --color-ink: oklch(0.2 0.05 250);
+  --color-forest: oklch(0.35 0.1 150);
+  --color-tomato: oklch(0.6 0.2 20);
+  --color-sage: oklch(0.85 0.05 130);
+  --color-ok: oklch(0.7 0.15 150);
+  --color-warn: oklch(0.8 0.15 70);
+  --color-danger: oklch(0.6 0.2 20);
+  --color-night: oklch(0.15 0.05 250);
+  --color-night-2: oklch(0.25 0.05 250);
+  --color-glow: oklch(0.9 0.15 150);
+
+  --font-sans: var(--font-sans), sans-serif;
+  --font-mono: var(--font-mono), monospace;
+  --font-display: var(--font-display), serif;
+
+  --color-background: var(--color-paper);
+  --color-foreground: var(--color-ink);
+
+  --color-card: var(--color-paper);
+  --color-card-foreground: var(--color-ink);
+
+  --color-popover: var(--color-paper);
+  --color-popover-foreground: var(--color-ink);
+
+  --color-primary: var(--color-forest);
+  --color-primary-foreground: var(--color-paper);
+
+  --color-secondary: var(--color-sage);
+  --color-secondary-foreground: var(--color-ink);
+
+  --color-muted: var(--color-sage);
+  --color-muted-foreground: var(--color-ink);
+
+  --color-accent: var(--color-tomato);
+  --color-accent-foreground: var(--color-paper);
+
+  --color-destructive: var(--color-danger);
+  --color-destructive-foreground: var(--color-paper);
+
+  --color-border: var(--color-sage);
+  --color-input: var(--color-sage);
+  --color-ring: var(--color-forest);
+
+  --radius-lg: var(--radius);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-sm: calc(var(--radius) - 4px);
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
+@layer base {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: var(--color-paper);
+    --foreground: var(--color-ink);
+    --radius: 0.5rem;
   }
-}
+  
+  .dark {
+    --background: var(--color-night);
+    --foreground: var(--color-paper);
+    --color-paper: oklch(0.15 0.05 250);
+    --color-ink: oklch(0.98 0.01 70);
+    --color-sage: oklch(0.25 0.05 250);
+    /* In dark mode, paper becomes night, sage becomes night-2, etc. */
+  }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
 }

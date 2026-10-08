@@ -1,0 +1,14 @@
+{
+  "main": [".opencode/", "docs/tasks/"],
+  "architect": ["docs/adr/", "docs/architecture.md"],
+  "backend": ["src/server/", "src/app/api/", "prisma/", "src/lib/schemas/", "src/config/"],
+  "data": ["prisma/seed.ts", "src/server/analytics/", "tests/data/"],
+  "ia": ["src/server/ia/", "src/lib/schemas/ia.ts"],
+  "frontend": ["src/app/", "src/components/", "src/lib/ui/", "src/lib/hooks/"],
+  "chaos": ["src/server/chaos/", "src/app/(admin)/admin/chaos/", "tests/chaos/"],
+  "qa": ["tests/", "vitest.config.ts", "playwright.config.ts"],
+  "ui-reviewer": ["screenshots/", "docs/reviews/"],
+  "security": ["src/server/security/", "docs/reviews/"],
+  "devops": [".github/", ".husky/", "scripts/", "package.json"],
+  "docs": ["README.md", "docs/PITCH.md", "docs/DEMO.md"]
+}
