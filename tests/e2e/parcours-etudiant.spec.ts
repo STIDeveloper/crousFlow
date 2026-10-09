@@ -3,22 +3,33 @@ import { test, expect } from '@playwright/test'
 test('Parcours étudiant', async ({ page }) => {
   // 1. Connexion
   await page.goto('/connexion')
-  await page.click('text=étudiant')
+  await page.getByRole('button', { name: /Étudiant/ }).click()
 
   // 2. Menu
   await expect(page).toHaveURL(/\/menu/)
   // Attendre le chargement
-  await page.waitForSelector('text=Date du jour', { timeout: 10000 })
+  await expect(
+    page.getByRole('heading', { name: /Les menus de la semaine prochaine/i }),
+  ).toBeVisible()
 
-  // 3. Réservation (si bouton dispo, on clique)
-  const reserveBtn = page.locator('button:has-text("Réserver")').first()
-  if (await reserveBtn.isVisible()) {
+  // 3. Réservation (sur un jour disponible sans réservation préalable, ex: mardi)
+  const tuesdayBtn = page.getByRole('button', { name: /mar\./i })
+  if (await tuesdayBtn.isVisible()) {
+    await tuesdayBtn.click()
+  }
+
+  const reserveBtn = page.locator('button:has-text("Réserver"):enabled').first()
+  if ((await reserveBtn.count()) > 0) {
     await reserveBtn.click()
-    await expect(page.locator('text=Réservation confirmée')).toBeVisible()
+    const composer = page.getByRole('dialog', { name: 'Composer votre repas' })
+    if (await composer.isVisible()) {
+      await composer.getByRole('button', { name: 'Confirmer la réservation' }).click()
+    }
+    await expect(page.getByText(/réservation est confirmée/i)).toBeVisible()
   }
 
   // 4. Tickets
-  await page.click('text=Mes tickets')
+  await page.getByRole('link', { name: 'Mes tickets', exact: true }).click()
   await expect(page).toHaveURL(/\/tickets/)
 
   // 5. Vérifier QR (soit vide soit visible)

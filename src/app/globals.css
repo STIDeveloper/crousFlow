@@ -1,25 +1,25 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 @plugin "tailwindcss-animate";
-@import "shadcn/tailwind.css";
+@import 'shadcn/tailwind.css';
 
 @custom-variant dark (&:is(.dark *));
 
 @theme {
-  --color-paper: oklch(0.98 0.01 70);
-  --color-ink: oklch(0.2 0.05 250);
-  --color-forest: oklch(0.35 0.1 150);
-  --color-tomato: oklch(0.6 0.2 20);
-  --color-sage: oklch(0.85 0.05 130);
+  --color-paper: #fff7e7;
+  --color-ink: #263d2c;
+  --color-forest: #245642;
+  --color-tomato: #d94329;
+  --color-sage: #e3ead5;
   --color-ok: oklch(0.7 0.15 150);
   --color-warn: oklch(0.8 0.15 70);
   --color-danger: oklch(0.6 0.2 20);
-  --color-night: oklch(0.15 0.05 250);
-  --color-night-2: oklch(0.25 0.05 250);
-  --color-glow: oklch(0.9 0.15 150);
+  --color-night: #142c23;
+  --color-night-2: #203d30;
+  --color-glow: #ffc857;
 
-  --font-sans: var(--font-sans), sans-serif;
-  --font-mono: var(--font-mono), monospace;
-  --font-display: var(--font-display), serif;
+  --font-sans: var(--font-geist-sans), sans-serif;
+  --font-mono: var(--font-geist-mono), monospace;
+  --font-display: var(--font-fraunces), serif;
 
   --color-background: var(--color-paper);
   --color-foreground: var(--color-ink);
@@ -60,14 +60,9 @@
     --foreground: var(--color-ink);
     --radius: 0.5rem;
   }
-  
+
   .dark {
-    --background: var(--color-night);
-    --foreground: var(--color-paper);
-    --color-paper: oklch(0.15 0.05 250);
-    --color-ink: oklch(0.98 0.01 70);
-    --color-sage: oklch(0.25 0.05 250);
-    /* In dark mode, paper becomes night, sage becomes night-2, etc. */
+    color-scheme: light;
   }
 
   * {
@@ -75,5 +70,66 @@
   }
   body {
     @apply bg-background text-foreground;
+  }
+}
+
+body {
+  background: #fff7e7;
+}
+::selection {
+  background: #ffc857;
+  color: #142c23;
+}
+button,
+a,
+input,
+select {
+  -webkit-tap-highlight-color: transparent;
+}
+button:not(:disabled),
+a {
+  cursor: pointer;
+}
+:focus-visible {
+  outline: 3px solid #d94329;
+  outline-offset: 4px;
+}
+.food-card {
+  box-shadow: 0 8px 24px #754b2310;
+  transition:
+    box-shadow 0.25s,
+    transform 0.25s;
+}
+.food-card:hover {
+  box-shadow: 0 18px 40px #754b2320;
+}
+.meal-art {
+  background: #f5b84d;
+  position: relative;
+  overflow: hidden;
+}
+.meal-art:nth-child(2n) {
+  background: #dfebc8;
+}
+.meal-plate {
+  filter: drop-shadow(0 14px 10px #60330b26);
+  transition: transform 0.4s ease;
+}
+.food-card:hover .meal-plate {
+  transform: rotate(-5deg) scale(1.04);
+}
+.visual-kicker {
+  font-size: 0.7rem;
+  letter-spacing: 0.18em;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
   }
 }

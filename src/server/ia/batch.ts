@@ -1,6 +1,5 @@
 import db from '../db'
 import { predictDemand } from './forecast'
-import crypto from 'crypto'
 import { ForecastMethod } from '@prisma/client'
 
 export async function predictBatch(date: Date) {
@@ -16,7 +15,7 @@ export async function predictBatch(date: Date) {
   for (const meal of meals) {
     const demand = await predictDemand(meal.id, date)
 
-    // Check if a forecast already exists to simulate Upsert if @@unique is not present
+    // Forecast has no composite unique key yet, so update the date/meal row explicitly.
     const existing = await db.forecast.findFirst({
       where: { date, mealId: meal.id },
     })
@@ -34,13 +33,32 @@ export async function predictBatch(date: Date) {
     } else {
       await db.forecast.create({
         data: {
-          id: crypto.randomUUID(),
           date,
           mealId: meal.id,
           predictedCount: demand.predictedCount,
           lower: demand.lower,
           upper: demand.upper,
           method: demand.method as ForecastMethod,
+        },
+      })
+    }
+
+    const existingBatch = await db.kitchenBatch.findFirst({
+      where: { date, mealId: meal.id },
+    })
+    if (existingBatch) {
+      await db.kitchenBatch.update({
+        where: { id: existingBatch.id },
+        data: { predictedCount: demand.predictedCount },
+      })
+    } else {
+      await db.kitchenBatch.create({
+        data: {
+          date,
+          mealId: meal.id,
+          predictedCount: demand.predictedCount,
+          preparedCount: 0,
+          status: 'PLANNED',
         },
       })
     }

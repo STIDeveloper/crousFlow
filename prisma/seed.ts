@@ -1,138 +1,386 @@
 import prisma from '../src/server/db'
-import crypto from 'crypto'
+import seedrandom from 'seedrandom'
+import { generateQrToken } from '../src/server/security/qr'
+import { existsSync, readFileSync } from 'node:fs'
+
+const HISTORY_WEEKS = 12
+const FUTURE_WEEKS = 8
+const SLOT_TIMES = [
+  { startTime: '12:00', endTime: '12:15' },
+  { startTime: '12:15', endTime: '12:30' },
+  { startTime: '12:30', endTime: '12:45' },
+]
+
+const MEAL_DEFINITIONS = [
+  {
+    id: 'meal1',
+    name: 'Poulet rôti et pommes de terre',
+    category: 'Viande',
+    productType: 'MAIN',
+    socialEligible: true,
+    priceCents: 100,
+  },
+  {
+    id: 'meal2',
+    name: 'Curry de légumes et riz',
+    category: 'Végétarien',
+    productType: 'MAIN',
+    socialEligible: true,
+    priceCents: 100,
+  },
+  {
+    id: 'meal3',
+    name: 'Poisson sauce citron',
+    category: 'Poisson',
+    productType: 'MAIN',
+    socialEligible: true,
+    priceCents: 100,
+  },
+  {
+    id: 'meal4',
+    name: 'Salade de crudités',
+    category: 'Entrée',
+    productType: 'SIDE',
+    socialEligible: true,
+    priceCents: 80,
+  },
+  {
+    id: 'meal5',
+    name: 'Compote de pommes',
+    category: 'Dessert',
+    productType: 'SIDE',
+    socialEligible: true,
+    priceCents: 80,
+  },
+  {
+    id: 'meal6',
+    name: 'Fruit de saison',
+    category: 'Fruit',
+    productType: 'SIDE',
+    socialEligible: true,
+    priceCents: 80,
+  },
+  {
+    id: 'meal7',
+    name: 'Yaourt nature',
+    category: 'Produit laitier',
+    productType: 'SIDE',
+    socialEligible: true,
+    priceCents: 80,
+  },
+  {
+    id: 'meal8',
+    name: 'Portion de fromage',
+    category: 'Fromage',
+    productType: 'SIDE',
+    socialEligible: true,
+    priceCents: 80,
+  },
+  {
+    id: 'meal9',
+    name: 'Biscuit',
+    category: 'Biscuit',
+    productType: 'SIDE',
+    socialEligible: true,
+    priceCents: 80,
+  },
+  {
+    id: 'meal10',
+    name: 'Eau pétillante',
+    category: 'Boisson',
+    productType: 'SUPPLEMENT',
+    socialEligible: false,
+    priceCents: 120,
+  },
+  {
+    id: 'meal11',
+    name: 'Jus de fruit',
+    category: 'Boisson',
+    productType: 'SUPPLEMENT',
+    socialEligible: false,
+    priceCents: 150,
+  },
+  {
+    id: 'meal12',
+    name: 'Dessert supplémentaire',
+    category: 'Dessert',
+    productType: 'SUPPLEMENT',
+    socialEligible: false,
+    priceCents: 100,
+  },
+  {
+    id: 'meal13',
+    name: 'Sandwich',
+    category: 'Vente individuelle',
+    productType: 'STANDALONE',
+    socialEligible: false,
+    priceCents: 350,
+  },
+  {
+    id: 'meal14',
+    name: 'Salade complète',
+    category: 'Vente individuelle',
+    productType: 'STANDALONE',
+    socialEligible: false,
+    priceCents: 420,
+  },
+  {
+    id: 'meal15',
+    name: 'Boisson seule',
+    category: 'Vente individuelle',
+    productType: 'STANDALONE',
+    socialEligible: false,
+    priceCents: 180,
+  },
+] as const
+
+function loadLocalEnv(): void {
+  const envPath = new URL('../.env', import.meta.url)
+  if (!existsSync(envPath)) return
+
+  for (const line of readFileSync(envPath, 'utf8').split(/\r?\n/)) {
+    const match = line.match(/^([A-Z0-9_]+)=(?:"(.*)"|(.*))$/)
+    if (!match || process.env[match[1]]) continue
+    process.env[match[1]] = match[2] ?? match[3] ?? ''
+  }
+}
+
+loadLocalEnv()
+
+function atUtcMidnight(value: Date): Date {
+  const date = new Date(value)
+  date.setUTCHours(0, 0, 0, 0)
+  return date
+}
+
+function isoDate(date: Date): string {
+  return date.toISOString().slice(0, 10)
+}
+
+function nextServiceDate(today: Date): Date {
+  const date = new Date(today)
+  date.setUTCDate(date.getUTCDate() + 1)
+  while (date.getUTCDay() === 0 || date.getUTCDay() === 6) {
+    date.setUTCDate(date.getUTCDate() + 1)
+  }
+  return date
+}
+
+function reservationCount(date: Date, mealIndex: number, random: () => number): number {
+  const weekdayDemand = [0, 26, 31, 28, 30, 20, 0][date.getUTCDay()]
+  const mealShare = [0.42, 0.34, 0.24][mealIndex]
+  const weeksBeforeToday = Math.max(0, Math.round((Date.now() - date.getTime()) / 604_800_000))
+  const examMultiplier = weeksBeforeToday === 6 || weeksBeforeToday === 7 ? 1.3 : 1
+  const noise = 0.9 + random() * 0.2
+  return Math.max(1, Math.round(weekdayDemand * mealShare * examMultiplier * noise))
+}
 
 async function main() {
+  const random = seedrandom('crousflow-production-seed-v1')
+  const today = atUtcMidnight(new Date())
+
+  await prisma.stockAllocation.deleteMany({})
+  await prisma.stockMovement.deleteMany({})
+  await prisma.receptionLine.deleteMany({})
+  await prisma.reception.deleteMany({})
+  await prisma.serviceOffer.deleteMany({})
+  await prisma.serviceSession.deleteMany({})
+  await prisma.balanceLedger.deleteMany({})
+  await prisma.reservationItem.deleteMany({})
   await prisma.reservation.deleteMany({})
   await prisma.kitchenBatch.deleteMany({})
   await prisma.forecast.deleteMany({})
   await prisma.menuItem.deleteMany({})
   await prisma.slot.deleteMany({})
   await prisma.meal.deleteMany({})
+  await prisma.session.deleteMany({})
+  await prisma.account.deleteMany({})
+  await prisma.restaurantSetting.deleteMany({})
   await prisma.user.deleteMany({})
+  await prisma.restaurant.deleteMany({})
+  await prisma.campus.deleteMany({})
 
-  // 1. Users
-  await prisma.user.create({
-    data: { id: 'admin1', email: 'admin@crousflow.test', name: 'Admin', role: 'ADMIN' },
+  const campus = await prisma.campus.create({
+    data: { id: 'campus-montreuil', name: 'IUT de Montreuil', slug: 'iut-montreuil' },
   })
-  await prisma.user.create({
-    data: { id: 'kitchen1', email: 'cuisine@crousflow.test', name: 'Cuisine', role: 'KITCHEN' },
+  const restaurant = await prisma.restaurant.create({
+    data: {
+      id: 'restaurant-crous-montreuil',
+      campusId: campus.id,
+      name: 'Restaurant universitaire Montreuil',
+      slug: 'ru-montreuil',
+    },
   })
 
-  const studentIds = []
-  for (let i = 1; i <= 20; i++) {
-    const id = `student${i}`
-    studentIds.push(id)
-    await prisma.user.create({
-      data: { id, email: `etudiant${i}@crousflow.test`, name: `Etudiant ${i}`, role: 'STUDENT' },
-    })
-  }
+  await prisma.restaurantSetting.create({
+    data: {
+      restaurantId: restaurant.id,
+      socialMealPriceCents: 100,
+      nonScholarPriceCents: 330,
+      bookingClosingHour: '11:00',
+      cancellationClosingHour: '10:30',
+      maxPerDay: 1,
+      maxPerWeek: 5,
+      maxPeripherals: 2,
+    },
+  })
 
-  // 2. Meals
-  const meals = []
-  for (let i = 1; i <= 15; i++) {
-    const meal = await prisma.meal.create({
-      data: {
-        id: `meal${i}`,
-        name: `Plat varié ${i}`,
-        description: `Un plat délicieux ${i}`,
-        category: i % 3 === 0 ? 'Végétarien' : 'Viande',
-        priceCents: i % 2 === 0 ? 330 : 450,
-        imageUrl: '/placeholder.png',
-        allergens: JSON.stringify(['Gluten']),
+  await prisma.user.createMany({
+    data: [
+      { id: 'admin1', email: 'admin@crousflow.test', name: 'Admin', role: 'ADMIN' },
+      {
+        id: 'kitchen1',
+        email: 'cuisine@crousflow.test',
+        name: 'Cuisine',
+        role: 'KITCHEN',
+        restaurantId: restaurant.id,
       },
-    })
-    meals.push(meal)
-  }
-
-  // 3. Menus & Slots (8 weeks future, 12 weeks past)
-  // Generating for a total of 20 weeks (-12 to +8)
-  const today = new Date()
-  today.setUTCHours(0, 0, 0, 0)
-
-  const days = []
-  for (let w = -12; w <= 8; w++) {
-    for (let d = 1; d <= 5; d++) {
-      // Mon-Fri
-      const date = new Date(today)
-      date.setUTCDate(today.getUTCDate() + w * 7 + (d - today.getUTCDay()))
-      days.push(date)
-    }
-  }
-
-  for (const date of days) {
-    // 3 meals per day
-    const dayMeals = [meals[0], meals[1], meals[2]]
-    for (const meal of dayMeals) {
-      await prisma.menuItem.create({
-        data: {
-          id: `menu-${date.toISOString().split('T')[0]}-${meal.id}`,
-          mealId: meal.id,
-          date,
-          available: true,
-        },
-      })
-    }
-
-    // 3 slots per day
-    const times = ['12:00', '12:15', '12:30']
-    for (const time of times) {
-      await prisma.slot.create({
-        data: {
-          id: `slot-${date.toISOString().split('T')[0]}-${time}`,
-          date,
-          startTime: time,
-          endTime: time
-            .replace('12:', '12:')
-            .replace('00', '15')
-            .replace('15', '30')
-            .replace('30', '45'),
-          capacity: 40,
-          reservedCount: 0,
-        },
-      })
-    }
-  }
-
-  // 4. History + Active reservations (simplistic seed for demo)
-  // For each day, apply a pattern to simulate history
-  // pattern: Tue/Thu higher, Fri lower, exams weeks (-6, -7) +30%, noise +/- 15%
-
-  // To keep the script execution within reasonable limits, we won't seed all 12 weeks with thousands of reservations
-  // one by one, but rather we can just seed a few for the demo.
-  // We'll create a few active reservations for the current week.
-
-  // active reservation for student1 today/tomorrow
-  const upcomingSlots = await prisma.slot.findMany({ where: { date: { gte: today } }, take: 5 })
-  const upcomingMenuItems = await prisma.menuItem.findMany({
-    where: { date: { gte: today } },
-    take: 5,
+      ...Array.from({ length: 20 }, (_, index) => ({
+        id: `student${index + 1}`,
+        email: `etudiant${index + 1}@crousflow.test`,
+        name: `Etudiant ${index + 1}`,
+        role: 'STUDENT' as const,
+      })),
+    ],
   })
 
-  if (upcomingSlots.length > 0 && upcomingMenuItems.length > 0) {
-    const s = upcomingSlots[0]
-    const m = upcomingMenuItems[0]
-    const newId = crypto.randomUUID()
+  const meals = await Promise.all(
+    MEAL_DEFINITIONS.map((definition) =>
+      prisma.meal.create({
+        data: {
+          ...definition,
+          description: `${definition.name}, proposé selon les disponibilités du jour.`,
+          imageUrl: '/placeholder.png',
+          allergens: JSON.stringify(['Gluten']),
+          restaurantId: restaurant.id,
+        },
+      }),
+    ),
+  )
+
+  const serviceDays: Date[] = []
+  for (let week = -HISTORY_WEEKS; week <= FUTURE_WEEKS; week += 1) {
+    for (let weekday = 1; weekday <= 5; weekday += 1) {
+      const date = new Date(today)
+      date.setUTCDate(today.getUTCDate() + week * 7 + weekday - today.getUTCDay())
+      serviceDays.push(date)
+    }
+  }
+
+  await prisma.menuItem.createMany({
+    data: serviceDays.flatMap((date) =>
+      meals.map((meal) => ({
+        id: `menu-${isoDate(date)}-${meal.id}`,
+        mealId: meal.id,
+        date,
+        available: true,
+        restaurantId: restaurant.id,
+      })),
+    ),
+  })
+  await prisma.slot.createMany({
+    data: serviceDays.flatMap((date) =>
+      SLOT_TIMES.map(({ startTime, endTime }) => ({
+        id: `slot-${isoDate(date)}-${startTime}`,
+        date,
+        startTime,
+        endTime,
+        capacity: 40,
+        reservedCount: 0,
+        restaurantId: restaurant.id,
+      })),
+    ),
+  })
+
+  const historicalReservations = [] as Array<{
+    id: string
+    userId: string
+    menuItemId: string
+    slotId: string
+    status: 'CONFIRMED' | 'CONSUMED' | 'CANCELLED' | 'NO_SHOW'
+    qrToken: string
+    idempotencyKey: string
+    createdAt: Date
+    consumedAt: Date | null
+    activeKey: null
+    restaurantId: string
+  }>
+  const slotCounts = new Map<string, number>()
+  let reservationIndex = 0
+
+  for (const date of serviceDays.filter((day) => day < today)) {
+    for (let mealIndex = 0; mealIndex < 3; mealIndex += 1) {
+      const count = reservationCount(date, mealIndex, random)
+      for (let countIndex = 0; countIndex < count; countIndex += 1) {
+        const slot = SLOT_TIMES[(countIndex + mealIndex) % SLOT_TIMES.length]
+        const slotId = `slot-${isoDate(date)}-${slot.startTime}`
+        const roll = random()
+        const status =
+          roll < 0.76
+            ? 'CONSUMED'
+            : roll < 0.88
+              ? 'CONFIRMED'
+              : roll < 0.95
+                ? 'NO_SHOW'
+                : 'CANCELLED'
+        const id = `history-reservation-${reservationIndex}`
+        historicalReservations.push({
+          id,
+          userId: `student${(reservationIndex % 20) + 1}`,
+          menuItemId: `menu-${isoDate(date)}-meal${mealIndex + 1}`,
+          slotId,
+          status,
+          qrToken: `archived-${id}`,
+          idempotencyKey: `history-idempotency-${reservationIndex}`,
+          createdAt: new Date(date.getTime() - 86_400_000),
+          consumedAt: status === 'CONSUMED' ? new Date(date.getTime() + 43_200_000) : null,
+          activeKey: null,
+          restaurantId: restaurant.id,
+        })
+        slotCounts.set(slotId, (slotCounts.get(slotId) ?? 0) + 1)
+        reservationIndex += 1
+      }
+    }
+  }
+  await prisma.reservation.createMany({ data: historicalReservations })
+  await prisma.$transaction(
+    [...slotCounts.entries()].map(([id, reservedCount]) =>
+      prisma.slot.update({ where: { id }, data: { reservedCount } }),
+    ),
+  )
+
+  const upcomingDate = nextServiceDate(today)
+  const qrExpiry = new Date(upcomingDate)
+  qrExpiry.setUTCDate(qrExpiry.getUTCDate() + 1)
+  for (let mealIndex = 0; mealIndex < 3; mealIndex += 1) {
+    const slot = SLOT_TIMES[mealIndex]
+    const id = `active-reservation-${mealIndex + 1}`
+    const slotId = `slot-${isoDate(upcomingDate)}-${slot.startTime}`
+    const menuItemId = `menu-${isoDate(upcomingDate)}-meal${mealIndex + 1}`
     await prisma.reservation.create({
       data: {
-        id: newId,
-        userId: 'student1',
-        slotId: s.id,
-        menuItemId: m.id,
-        idempotencyKey: crypto.randomUUID(),
+        id,
+        userId: `student${mealIndex + 1}`,
+        menuItemId,
+        slotId,
         status: 'CONFIRMED',
-        activeKey: `student1-${s.id}-${m.id}`,
-        qrToken: 'dummy-qr', // Normally generated properly
+        qrToken: generateQrToken(id, qrExpiry),
+        idempotencyKey: `active-idempotency-${mealIndex + 1}`,
+        activeKey: `student${mealIndex + 1}-${slotId}-${menuItemId}`,
+        restaurantId: restaurant.id,
       },
     })
-    await prisma.slot.update({ where: { id: s.id }, data: { reservedCount: { increment: 1 } } })
+    await prisma.slot.update({ where: { id: slotId }, data: { reservedCount: { increment: 1 } } })
   }
 
-  console.log('Seed terminé.')
+  console.log(
+    `Seed terminé : ${historicalReservations.length} réservations historiques, 3 tickets actifs.`,
+  )
 }
 
 main()
-  .catch((e) => {
-    console.error(e)
+  .catch((error: unknown) => {
+    console.error(error)
     process.exit(1)
   })
   .finally(async () => {

@@ -16,42 +16,42 @@ Un service public qui a le soin d'un produit premium. Chaleureux, appétissant, 
 
 ## 2. Stack UI
 
-| Couche | Choix | Rôle |
-|---|---|---|
-| Framework | Next.js 16.x (App Router, Turbopack) | Rendu, routes, Server Actions |
-| UI runtime | React 19 + React Compiler | Réactivité sans useMemo/useCallback |
-| Style | Tailwind CSS 4.x (config CSS-first, @theme) | Tokens de design |
-| Composants | shadcn/ui (Base UI par défaut) | Base accessible |
-| Animation | motion | Layout animations, transitions |
-| Effets signature | Magic UI + Aceternity (1-2 max) | Number ticker, beams, 3D |
-| Graphiques | shadcn/ui Charts (Recharts) | Prévisions, affluence, KPI |
-| Données | TanStack Query v5 + Table v8 | Cache, refetch live |
-| Formulaires | React Hook Form + Zod | Validation unique |
-| Feedback | Sonner, Lucide | Toasts, icônes |
-| Thème | next-themes | Clair / sombre |
-| IA | Vercel AI SDK + @ai-sdk/google | Streaming, sorties Zod |
-| QR | qrcode.react | Ticket de retrait |
+| Couche           | Choix                                       | Rôle                                |
+| ---------------- | ------------------------------------------- | ----------------------------------- |
+| Framework        | Next.js 16.x (App Router, Turbopack)        | Rendu, routes, Server Actions       |
+| UI runtime       | React 19 + React Compiler                   | Réactivité sans useMemo/useCallback |
+| Style            | Tailwind CSS 4.x (config CSS-first, @theme) | Tokens de design                    |
+| Composants       | shadcn/ui (Base UI par défaut)              | Base accessible                     |
+| Animation        | motion                                      | Layout animations, transitions      |
+| Effets signature | Magic UI + Aceternity (1-2 max)             | Number ticker, beams, 3D            |
+| Graphiques       | shadcn/ui Charts (Recharts)                 | Prévisions, affluence, KPI          |
+| Données          | TanStack Query v5 + Table v8                | Cache, refetch live                 |
+| Formulaires      | React Hook Form + Zod                       | Validation unique                   |
+| Feedback         | Sonner, Lucide                              | Toasts, icônes                      |
+| Thème            | next-themes                                 | Clair / sombre                      |
+| IA               | Vercel AI SDK + @ai-sdk/google              | Streaming, sorties Zod              |
+| QR               | qrcode.react                                | Ticket de retrait                   |
 
 ## 3. Tokens (Tailwind v4, app/globals.css)
 
 Couleurs en oklch. Le texte ne doit jamais utiliser l'orange (contraste insuffisant) : l'orange sert aux fonds.
 
 @theme {
-  --color-paper:    oklch(0.975 0.012 85);
-  --color-ink:      oklch(0.22 0.03 150);
-  --color-forest:   oklch(0.42 0.09 155);
-  --color-tomato:   oklch(0.68 0.19 40);
-  --color-sage:     oklch(0.90 0.04 150);
-  --color-ok:       oklch(0.62 0.15 150);
-  --color-warn:     oklch(0.80 0.15 85);
-  --color-danger:   oklch(0.55 0.20 25);
-  --color-night:    oklch(0.18 0.02 150);
-  --color-night-2:  oklch(0.24 0.03 150);
-  --color-glow:     oklch(0.80 0.17 75);
-  --radius-card: 1.25rem;
-  --font-display: "Fraunces", serif;
-  --font-sans:    "Geist", system-ui, sans-serif;
-  --font-mono:    "Geist Mono", ui-monospace, monospace;
+--color-paper: oklch(0.975 0.012 85);
+--color-ink: oklch(0.22 0.03 150);
+--color-forest: oklch(0.42 0.09 155);
+--color-tomato: oklch(0.68 0.19 40);
+--color-sage: oklch(0.90 0.04 150);
+--color-ok: oklch(0.62 0.15 150);
+--color-warn: oklch(0.80 0.15 85);
+--color-danger: oklch(0.55 0.20 25);
+--color-night: oklch(0.18 0.02 150);
+--color-night-2: oklch(0.24 0.03 150);
+--color-glow: oklch(0.80 0.17 75);
+--radius-card: 1.25rem;
+--font-display: "Fraunces", serif;
+--font-sans: "Geist", system-ui, sans-serif;
+--font-mono: "Geist Mono", ui-monospace, monospace;
 }
 
 Typographie via next/font : Fraunces (titres), Geist (interface), Geist Mono (ticket, logs).

@@ -20,6 +20,7 @@
 - **5:00 - 10:00** : Questions du professeur.
 
 ### PLAN B (Secours)
+
 - Si l'API Gemini tombe : Aucun crash. Les prévisions passent en "repli STAT" (moyenne mobile), clairement indiqué dans le dashboard cuisine.
-- Si la base de données est altérée : Lancer `pnpm demo` en terminal, qui reset la DB en 30 secondes via `pnpm seed`.
+- Pour préparer une démo isolée : lancer `pnpm demo`. Le script reconstruit `prisma/demo.db` et affiche la commande de démarrage avec `CROUSFLOW_DATABASE_PATH`; `prisma/dev.db` n'est jamais supprimée par défaut.
 - Si le port ou le réseau tombe complètement : Dossier `screenshots/` pour des captures fonctionnelles, et `docs/video/` pour les enregistrements locaux.

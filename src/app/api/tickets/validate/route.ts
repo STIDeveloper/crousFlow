@@ -4,6 +4,7 @@ import { validateTicket } from '@/server/reservations/validate'
 import { validateTicketSchema } from '@/lib/schemas/ticket'
 import { requireSessionUser, requireRole } from '@/server/auth/session'
 import { checkRateLimit } from '@/server/rate-limit'
+import { readJsonBody } from '@/server/http/body'
 import crypto from 'crypto'
 
 export async function POST(req: NextRequest) {
@@ -13,14 +14,13 @@ export async function POST(req: NextRequest) {
     requireRole(user, ['KITCHEN', 'ADMIN'])
     checkRateLimit(`validate_ticket_${user.id}`, 30, 60000)
 
-    const body = await req.json().catch(() => null)
-    if (!body) throw new AppError('BAD_JSON', 'JSON malformé', 400)
+    const body = await readJsonBody(req)
 
     const parsed = validateTicketSchema.safeParse(body)
     if (!parsed.success)
       throw new AppError('VALIDATION_ERROR', 'Données invalides', 422, parsed.error)
 
-    const result = await validateTicket(user.id, parsed.data.token)
+    const result = await validateTicket(user, parsed.data.token, parsed.data.operationKey)
     return NextResponse.json(result)
   } catch (err) {
     const { status, body } = toHttpResponse(err, requestId)

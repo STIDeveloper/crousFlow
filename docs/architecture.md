@@ -1,13 +1,15 @@
 # Architecture CrousFlow
 
 ## Schéma des couches
+
 Le flux de données suit une architecture stricte :
-`src/app/` (Pages & Composants) 
-  -> `src/app/api/` (Handlers HTTP fins, parsing Zod) 
-  -> `src/server/` (Services métiers, logique, IA) 
-  -> `prisma/` (Base de données SQLite)
+`src/app/` (Pages & Composants)
+-> `src/app/api/` (Handlers HTTP fins, parsing Zod)
+-> `src/server/` (Services métiers, logique, IA)
+-> `prisma/` (Base de données SQLite)
 
 ## Les 12 Agents (Harness)
+
 1. `main` : Orchestrateur central.
 2. `architect` : Décisions d'architecture, conception des contrats.
 3. `data` : Modélisation et accès base de données.
@@ -22,6 +24,7 @@ Le flux de données suit une architecture stricte :
 12. `docs` : Documentation, Pitch, Démo.
 
 ## Portes de Qualité (Gates)
+
 - **G1** : Plan et périmètre validés.
 - **G2** : Contrats publiés (schémas Zod, codes d'erreur, routes).
 - **G3** : `pnpm check` vert (lint, typecheck, test, build).
@@ -29,6 +32,7 @@ Le flux de données suit une architecture stricte :
 - **G5** : Démo prête (E2E verts, seed rejouable).
 
 ## Routes API Finales
+
 - `POST /api/auth/demo`
 - `GET /api/health`
 - `POST /api/reservations`

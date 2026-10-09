@@ -1,0 +1,21 @@
+# Déploiement gratuit sur Render : New > Blueprint > sélectionner ce dépôt.
+# Disque éphémère : la base de démo est recréée depuis le seed à chaque démarrage.
+services:
+  - type: web
+    name: crousflow
+    runtime: node
+    plan: free
+    buildCommand: corepack enable && pnpm install --frozen-lockfile && pnpm exec prisma generate && pnpm build
+    startCommand: pnpm start:prod
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_VERSION
+        value: 22
+      - key: CROUSFLOW_DEMO
+        value: '1'
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: QR_SECRET
+        generateValue: true
+      - key: GOOGLE_GENERATIVE_AI_API_KEY
+        sync: false

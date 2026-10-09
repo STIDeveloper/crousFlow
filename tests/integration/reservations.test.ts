@@ -19,12 +19,17 @@ describe('Reservations API', () => {
 
   beforeEach(async () => {
     // Nettoyer la base (attention à l'ordre des contraintes)
+    await db.balanceLedger.deleteMany({})
+    await db.reservationItem.deleteMany({})
     await db.reservation.deleteMany({})
     await db.kitchenBatch.deleteMany({})
     await db.forecast.deleteMany({})
     await db.menuItem.deleteMany({})
     await db.slot.deleteMany({})
     await db.meal.deleteMany({})
+    await db.session.deleteMany({})
+    await db.account.deleteMany({})
+    await db.invitation.deleteMany({})
     await db.user.deleteMany({})
 
     // Créer des données de base
@@ -38,6 +43,8 @@ describe('Reservations API', () => {
         category: 'Cat',
         description: 'Desc',
         priceCents: 100,
+        productType: 'MAIN',
+        socialEligible: true,
         imageUrl: '',
         allergens: '[]',
       },
@@ -59,9 +66,18 @@ describe('Reservations API', () => {
   })
 
   const mockSession = (id: string) => {
+    const payload = Buffer.from(
+      JSON.stringify({ exp: Math.floor(Date.now() / 1000) + 60 * 60, sub: id }),
+    ).toString('base64url')
+    const signature = crypto
+      .createHmac('sha256', process.env.SESSION_SECRET ?? '')
+      .update(payload)
+      .digest('base64url')
+
     vi.mocked(headers.cookies).mockReturnValue(
       Promise.resolve({
-        get: (name: string) => (name === 'demo_user' ? { value: id } : undefined),
+        get: (name: string) =>
+          name === 'demo_user' ? { value: `${payload}.${signature}` } : undefined,
         set: vi.fn(),
       }) as unknown as ReturnType<typeof headers.cookies>,
     )
@@ -106,6 +122,101 @@ describe('Reservations API', () => {
 
     const count = await db.reservation.count()
     expect(count).toBe(1)
+  })
+
+  it('enregistre deux périphériques gratuits et un supplément payant', async () => {
+    const date = (await db.menuItem.findUniqueOrThrow({ where: { id: menuItemId } })).date
+    const sideMeals = await Promise.all(
+      ['Fruit', 'Yaourt'].map((name, index) =>
+        db.meal.create({
+          data: {
+            name,
+            description: name,
+            category: index === 0 ? 'Fruit' : 'Produit laitier',
+            priceCents: 80,
+            productType: 'SIDE',
+            socialEligible: true,
+            imageUrl: '',
+            allergens: '[]',
+          },
+        }),
+      ),
+    )
+    const supplementMeal = await db.meal.create({
+      data: {
+        name: 'Boisson',
+        description: 'Boisson en supplément',
+        category: 'Boisson',
+        priceCents: 150,
+        productType: 'SUPPLEMENT',
+        socialEligible: false,
+        imageUrl: '',
+        allergens: '[]',
+      },
+    })
+    const sideItems = await Promise.all(
+      sideMeals.map((meal) =>
+        db.menuItem.create({ data: { mealId: meal.id, date, available: true } }),
+      ),
+    )
+    const supplementItem = await db.menuItem.create({
+      data: { mealId: supplementMeal.id, date, available: true },
+    })
+
+    const { createReservation } = await import('../../src/server/reservations/create')
+    const { reservation } = await createReservation(userId, {
+      slotId,
+      menuItemId,
+      peripheralMenuItemIds: sideItems.map((item) => item.id),
+      supplementMenuItemIds: [supplementItem.id],
+      idempotencyKey: crypto.randomUUID(),
+    })
+
+    expect(reservation.priceCents).toBe(250)
+    expect(reservation.items).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ kind: 'SIDE', priceCentsSnapshot: 0 }),
+        expect.objectContaining({ kind: 'SUPPLEMENT', priceCentsSnapshot: 150 }),
+      ]),
+    )
+    expect(reservation.items).toHaveLength(3)
+  })
+
+  it('limite CrousFlow à un repas social par service et libère le quota après annulation', async () => {
+    const { createReservation } = await import('../../src/server/reservations/create')
+    const first = await createReservation(userId, {
+      slotId,
+      menuItemId,
+      idempotencyKey: crypto.randomUUID(),
+    })
+    const date = (await db.slot.findUniqueOrThrow({ where: { id: slotId } })).date
+    const secondSlot = await db.slot.create({
+      data: {
+        date,
+        startTime: '12:30',
+        endTime: '12:45',
+        capacity: 5,
+        reservedCount: 0,
+      },
+    })
+
+    await expect(
+      createReservation(userId, {
+        slotId: secondSlot.id,
+        menuItemId,
+        idempotencyKey: crypto.randomUUID(),
+      }),
+    ).rejects.toMatchObject({ code: 'SOCIAL_MEAL_LIMIT', status: 409 })
+
+    const { cancelReservation } = await import('../../src/server/reservations/cancel')
+    await cancelReservation(userId, first.reservation.id)
+    await expect(
+      createReservation(userId, {
+        slotId: secondSlot.id,
+        menuItemId,
+        idempotencyKey: crypto.randomUUID(),
+      }),
+    ).resolves.toBeDefined()
   })
 
   it('POST /api/reservations : slot plein -> 409 SLOT_FULL', async () => {
@@ -209,6 +320,20 @@ describe('Reservations API', () => {
       idempotencyKey: crypto.randomUUID(),
     })
 
+    const slot = await db.slot.findUniqueOrThrow({ where: { id: slotId } })
+    vi.useFakeTimers()
+    vi.setSystemTime(
+      new Date(
+        Date.UTC(
+          slot.date.getUTCFullYear(),
+          slot.date.getUTCMonth(),
+          slot.date.getUTCDate(),
+          12,
+          5,
+        ),
+      ),
+    )
+
     mockSession(adminId)
     const body = { token: qrToken }
 
@@ -227,6 +352,7 @@ describe('Reservations API', () => {
     expect(res2.status).toBe(409)
     const data2 = await res2.json()
     expect(data2.code).toBe('ALREADY_CONSUMED')
+    vi.useRealTimers()
   })
 
   it('POST /api/tickets/validate : QR falsifié -> 400 QR_INVALID', async () => {

@@ -1,5 +1,11 @@
 import { AppError } from '@/server/errors'
 import { cancelReservation } from '@/server/reservations/cancel'
+import { readJsonBody } from '@/server/http/body'
+import { createReservationSchema } from '@/lib/schemas/reservation'
+import { checkRateLimit } from '@/server/rate-limit'
+import { verifyQrToken } from '@/server/security/qr'
+import { explainForecast } from '@/server/ia/explain'
+import crypto from 'crypto'
 
 export type ChaosCaseResult = {
   actual: string
@@ -16,7 +22,27 @@ export type ChaosCase = {
 
 export const cases: ChaosCase[] = []
 
-function register(id: string, description: string, expected: string, fn: () => Promise<string>) {
+function errorLabel(error: unknown): string {
+  if (error instanceof AppError) return `${error.status} ${error.code}`
+  if (
+    error &&
+    typeof error === 'object' &&
+    'status' in error &&
+    typeof error.status === 'number' &&
+    'code' in error &&
+    typeof error.code === 'string'
+  ) {
+    return `${error.status} ${error.code}`
+  }
+  return error instanceof Error ? error.message : 'ERROR'
+}
+
+function register(
+  id: string,
+  description: string,
+  expected: string,
+  fn: () => Promise<string>,
+): void {
   cases.push({
     id,
     description,
@@ -28,17 +54,8 @@ function register(id: string, description: string, expected: string, fn: () => P
         const durationMs = Date.now() - start
         return { actual, passed: actual === expected, durationMs }
       } catch (e: unknown) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const err = e as any
         const durationMs = Date.now() - start
-        let actual = 'ERROR'
-        if (err instanceof AppError) {
-          actual = `${err.status} ${err.code}`
-        } else if (err && err.status && err.code) {
-          actual = `${err.status} ${err.code}`
-        } else {
-          actual = err?.message || 'ERROR'
-        }
+        const actual = errorLabel(e)
         return { actual, passed: actual === expected, durationMs }
       }
     },
@@ -103,12 +120,21 @@ register('C-11', 'Injection SQL', '422 VALIDATION_ERROR', async () => {
 
 // C-12 JSON malformé
 register('C-12', 'JSON malformé', '400 BAD_JSON', async () => {
-  throw new AppError('BAD_JSON', '', 400)
+  await readJsonBody(
+    new Request('http://localhost/api/reservations', { body: '{', method: 'POST' }),
+  )
+  return '200 OK'
 })
 
 // C-13 Mauvais type
 register('C-13', 'Mauvais type', '422 VALIDATION_ERROR', async () => {
-  throw new AppError('VALIDATION_ERROR', '', 422)
+  const result = createReservationSchema.safeParse({
+    idempotencyKey: crypto.randomUUID(),
+    menuItemId: 42,
+    slotId: true,
+  })
+  if (!result.success) throw new AppError('VALIDATION_ERROR', 'Données invalides', 422)
+  return '200 OK'
 })
 
 // C-14 Emojis / RTL / invisibles
@@ -118,13 +144,8 @@ register('C-14', 'Emojis / RTL / invisibles', '422 VALIDATION_ERROR', async () =
 
 // C-15 ID inexistant
 register('C-15', 'ID inexistant', '404 NOT_FOUND', async () => {
-  try {
-    await cancelReservation('student1', 'fake-id')
-    return '200 OK'
-  } catch (err: unknown) {
-    if (err instanceof AppError && err.code === 'NOT_FOUND') throw err
-    throw new AppError('NOT_FOUND', '', 404) // fallback if it throws something else
-  }
+  await cancelReservation('chaos-probe-user', 'chaos-missing-reservation')
+  return '200 OK'
 })
 
 // C-16 Accès réservation d'autrui
@@ -139,12 +160,18 @@ register('C-17', 'Étudiant appelle route cuisine', '403 FORBIDDEN', async () =>
 
 // C-18 100 requêtes rapides
 register('C-18', '100 requêtes rapides', '429 RATE_LIMITED', async () => {
-  throw new AppError('RATE_LIMITED', '', 429)
+  const key = `chaos-rate-limit-${crypto.randomUUID()}`
+  for (let index = 0; index < 100; index += 1) checkRateLimit(key, 100, 60_000)
+  checkRateLimit(key, 100, 60_000)
+  return '200 OK'
 })
 
 // C-19 QR falsifié ou expiré
 register('C-19', 'QR falsifié ou expiré', '400 QR_INVALID', async () => {
-  throw new AppError('QR_INVALID', '', 400)
+  if (verifyQrToken('tampered.qr-token') === null) {
+    throw new AppError('QR_INVALID', 'QR Code invalide', 400)
+  }
+  return '200 OK'
 })
 
 // C-20 QR déjà consommé
@@ -164,7 +191,23 @@ register('C-22', 'Corps > 1 Mo', '413 PAYLOAD_TOO_LARGE', async () => {
 
 // C-23 Gemini indisponible
 register('C-23', 'Gemini indisponible', 'repli STAT, aucun crash', async () => {
-  return 'repli STAT, aucun crash'
+  const previousKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY
+  process.env.GOOGLE_GENERATIVE_AI_API_KEY = 'dummy'
+  try {
+    const result = await explainForecast({
+      actualReservations: 8,
+      date: new Date(),
+      historicalAverage: 10,
+      mealName: 'Sonde chaos',
+      predictedCount: 10,
+    })
+    return result.explanation.includes('Prévision de secours')
+      ? 'repli STAT, aucun crash'
+      : 'fallback absent'
+  } finally {
+    if (previousKey === undefined) delete process.env.GOOGLE_GENERATIVE_AI_API_KEY
+    else process.env.GOOGLE_GENERATIVE_AI_API_KEY = previousKey
+  }
 })
 
 // C-24 Base indisponible (simulée)

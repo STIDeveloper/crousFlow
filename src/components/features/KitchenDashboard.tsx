@@ -1,20 +1,31 @@
 'use client'
 
-import { useState } from 'react'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Loader2, Plus, Minus, Info, AlertTriangle, CheckCircle2, XCircle } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
-  ResponsiveContainer,
-  ComposedChart,
-  Line,
+  AlertTriangle,
+  ChefHat,
+  ClipboardCheck,
+  Info,
+  Minus,
+  Plus,
+  RefreshCw,
+  Truck,
+} from 'lucide-react'
+import {
   Area,
+  CartesianGrid,
+  ComposedChart,
+  ResponsiveContainer,
+  Tooltip,
   XAxis,
   YAxis,
-  CartesianGrid,
-  Tooltip,
 } from 'recharts'
-import { motion } from 'framer-motion'
 import { toast } from 'sonner'
+import { KitchenReceptionPanel } from './KitchenReceptionPanel'
+import { KitchenTicketDesk } from './KitchenTicketDesk'
+import { KitchenShortageManager } from './KitchenShortageManager'
+import { KitchenStandaloneCounter } from './KitchenStandaloneCounter'
 
 type Batch = {
   id: string
@@ -27,79 +38,113 @@ type Batch = {
 type Forecast = {
   mealId: string
   mealName?: string
-  predictedCount: number
+  predicted: number
   lower: number
   upper: number
   method: string
   explanation?: string
 }
+type ForecastResponse = {
+  forecasts: Forecast[]
+  evaluations: { modelMAE?: number; naiveMAE?: number }[]
+}
 
-function BeamAnimation() {
+type SlotSummary = {
+  id: string
+  startTime: string
+  endTime: string
+  meals: { id: string; name: string; count: number }[]
+  products: { id: string; name: string; count: number; productType: string }[]
+  totalCount: number
+}
+
+function getNextServiceDate(): string {
+  const date = new Date()
+  date.setUTCHours(0, 0, 0, 0)
+  date.setUTCDate(date.getUTCDate() + 1)
+
+  while (date.getUTCDay() === 0 || date.getUTCDay() === 6) {
+    date.setUTCDate(date.getUTCDate() + 1)
+  }
+
+  return date.toISOString().slice(0, 10)
+}
+
+function ScreenState({ kind, retry }: { kind: 'empty' | 'error'; retry?: () => void }) {
+  const copy =
+    kind === 'error'
+      ? ['Impossible de charger le poste cuisine.', 'Vérifiez la connexion puis réessayez.']
+      : [
+          'Aucune production planifiée à cette date.',
+          'Les lots apparaîtront dès que des repas seront configurés.',
+        ]
   return (
-    <div className="relative w-full h-32 flex items-center justify-between px-8 bg-night-2/50 border border-sage/20 rounded-2xl overflow-hidden my-8">
-      <div className="z-10 bg-night border border-sage p-4 rounded-xl shadow-lg">
-        <p className="font-bold text-sage">Réservations</p>
-      </div>
-      <div className="z-10 bg-night border border-glow p-4 rounded-xl shadow-lg shadow-glow/20">
-        <p className="font-bold text-glow">Prévision IA</p>
-      </div>
-      <div className="z-10 bg-night border border-forest p-4 rounded-xl shadow-lg">
-        <p className="font-bold text-forest">Production</p>
-      </div>
-
-      <svg
-        className="absolute inset-0 w-full h-full pointer-events-none"
-        preserveAspectRatio="none"
-      >
-        <motion.path
-          d="M 120 64 L 500 64 L 800 64"
-          fill="none"
-          stroke="var(--color-glow)"
-          strokeWidth="4"
-          strokeLinecap="round"
-          initial={{ pathLength: 0, opacity: 0 }}
-          animate={{ pathLength: 1, opacity: [0, 1, 0] }}
-          transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
-        />
-        <path
-          d="M 120 64 L 800 64"
-          fill="none"
-          stroke="var(--color-sage)"
-          strokeWidth="2"
-          strokeDasharray="4 4"
-          className="opacity-30"
-        />
-      </svg>
-    </div>
+    <section
+      className="rounded-2xl border border-sage/25 bg-night-2 p-8 text-center"
+      role={kind === 'error' ? 'alert' : undefined}
+    >
+      <AlertTriangle className="mx-auto mb-3 size-8 text-warn" aria-hidden="true" />
+      <h2 className="font-display text-xl font-bold">{copy[0]}</h2>
+      <p className="mt-2 text-sm text-sage">{copy[1]}</p>
+      {retry && (
+        <button
+          onClick={retry}
+          className="mt-5 min-h-11 rounded-xl border border-sage/50 px-4 font-bold hover:bg-sage/15 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-glow"
+        >
+          Réessayer
+        </button>
+      )}
+    </section>
   )
 }
 
 export function KitchenDashboard() {
   const queryClient = useQueryClient()
-  const [ticketToken, setTicketToken] = useState('')
-  const todayStr = new Date().toISOString().split('T')[0]
-
-  const { data: batches, isLoading: batchesLoading } = useQuery<Batch[]>({
-    queryKey: ['kitchen', 'batches', todayStr],
+  const [isOnline, setIsOnline] = useState(true)
+  const [serviceDate, setServiceDate] = useState(getNextServiceDate)
+  const [activeTab, setActiveTab] = useState<'comptoir' | 'reception' | 'production'>('comptoir')
+  useEffect(() => {
+    const update = () => setIsOnline(navigator.onLine)
+    update()
+    addEventListener('online', update)
+    addEventListener('offline', update)
+    return () => {
+      removeEventListener('online', update)
+      removeEventListener('offline', update)
+    }
+  }, [])
+  const batchesQuery = useQuery<Batch[]>({
+    queryKey: ['kitchen', 'batches', serviceDate],
     queryFn: async () => {
-      const res = await fetch('/api/kitchen/batches?date=' + todayStr)
-      if (!res.ok) throw new Error('Erreur')
+      const res = await fetch(`/api/kitchen/batches?date=${serviceDate}`)
+      if (!res.ok) throw new Error('Lots indisponibles')
       return res.json()
     },
   })
-
-  const { data: forecastData, isLoading: forecastLoading } = useQuery<{
-    forecasts: Forecast[]
-    evaluations: { modelMAE?: number; naiveMAE?: number }[]
-  }>({
-    queryKey: ['kitchen', 'forecast', todayStr],
+  const forecastQuery = useQuery<ForecastResponse>({
+    queryKey: ['kitchen', 'forecast', serviceDate],
     queryFn: async () => {
-      const res = await fetch('/api/kitchen/forecast?date=' + todayStr)
-      if (!res.ok) throw new Error('Erreur')
+      const res = await fetch(`/api/kitchen/forecast?date=${serviceDate}`)
+      if (!res.ok) throw new Error('Prévisions indisponibles')
       return res.json()
     },
   })
+  const slotsSummaryQuery = useQuery<SlotSummary[]>({
+    queryKey: ['kitchen', 'slots-summary', serviceDate],
+    queryFn: async () => {
+      const res = await fetch(`/api/kitchen/slots-summary?date=${serviceDate}`)
+      if (!res.ok) throw new Error('Résumés par créneau indisponibles')
+      return res.json()
+    },
+  })
+  useEffect(() => {
+    if (!forecastQuery.isSuccess) return
 
+    void queryClient.refetchQueries({
+      queryKey: ['kitchen', 'batches', serviceDate],
+      type: 'active',
+    })
+  }, [forecastQuery.dataUpdatedAt, forecastQuery.isSuccess, queryClient, serviceDate])
   const updateBatch = useMutation({
     mutationFn: async ({ id, preparedCount }: { id: string; preparedCount: number }) => {
       const res = await fetch('/api/kitchen/batches', {
@@ -107,288 +152,449 @@ export function KitchenDashboard() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id, preparedCount }),
       })
-      if (!res.ok) throw new Error('Patch failed')
+      if (!res.ok) throw new Error('La quantité n’a pas été enregistrée.')
       return res.json()
     },
-    onMutate: async (newData) => {
-      await queryClient.cancelQueries({ queryKey: ['kitchen', 'batches', todayStr] })
-      const prev = queryClient.getQueryData<Batch[]>(['kitchen', 'batches', todayStr])
-      queryClient.setQueryData<Batch[]>(['kitchen', 'batches', todayStr], (old) =>
-        old?.map((b) => (b.id === newData.id ? { ...b, preparedCount: newData.preparedCount } : b)),
+    onMutate: async (change) => {
+      await queryClient.cancelQueries({ queryKey: ['kitchen', 'batches', serviceDate] })
+      const previous = queryClient.getQueryData<Batch[]>(['kitchen', 'batches', serviceDate])
+      queryClient.setQueryData<Batch[]>(['kitchen', 'batches', serviceDate], (old) =>
+        old?.map((batch) =>
+          batch.id === change.id ? { ...batch, preparedCount: change.preparedCount } : batch,
+        ),
       )
-      return { prev }
+      return { previous }
     },
-    onError: (err: Error, newData, context) => {
-      if (context?.prev) {
-        queryClient.setQueryData(['kitchen', 'batches', todayStr], context.prev)
-      }
-      toast.error('Erreur lors de la mise à jour')
+    onError: (error: Error, _change, context) => {
+      if (context?.previous)
+        queryClient.setQueryData(['kitchen', 'batches', serviceDate], context.previous)
+      toast.error(error.message)
     },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ['kitchen', 'batches', todayStr] })
-    },
+    onSettled: () =>
+      queryClient.invalidateQueries({ queryKey: ['kitchen', 'batches', serviceDate] }),
   })
-
-  const validateTicket = useMutation({
-    mutationFn: async (token: string) => {
-      const res = await fetch('/api/tickets/validate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token }),
-      })
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}))
-        throw new Error(data.message || 'Ticket invalide')
-      }
-      return res.json()
-    },
-    onSuccess: () => {
-      toast.success('Ticket validé avec succès', { icon: <CheckCircle2 className="text-ok" /> })
-      setTicketToken('')
-    },
-    onError: (err: Error) => {
-      toast.error(err.message, { icon: <XCircle className="text-danger" /> })
-    },
-  })
-
-  if (batchesLoading || forecastLoading) {
-    return (
-      <div className="flex h-[50vh] items-center justify-center">
-        <Loader2 className="animate-spin text-glow w-12 h-12" />
-      </div>
-    )
+  const refresh = () => {
+    queryClient.invalidateQueries({ queryKey: ['kitchen'] })
+    toast('Actualisation demandée.')
   }
-
-  const totalPrepared = batches?.reduce((acc, b) => acc + b.preparedCount, 0) || 0
-  const totalPredicted = batches?.reduce((acc, b) => acc + b.predictedCount, 0) || 0
-
-  const chartData = [
-    { name: 'J-6', reserve: 40, prevision: 45 },
-    { name: 'J-5', reserve: 60, prevision: 55 },
-    { name: 'J-4', reserve: 80, prevision: 75 },
-    { name: 'J-3', reserve: 100, prevision: 105 },
-    { name: 'J-2', reserve: 120, prevision: 115 },
-    { name: 'J-1', reserve: 140, prevision: 145 },
-    { name: 'Auj.', reserve: totalPrepared, prevision: totalPredicted },
-  ]
-
+  const batches = batchesQuery.data ?? []
+  const forecasts = forecastQuery.data?.forecasts ?? []
+  const slotsSummary = slotsSummaryQuery.data ?? []
+  const totalPrepared = batches.reduce((sum, batch) => sum + batch.preparedCount, 0)
+  const totalPredicted = batches.reduce((sum, batch) => sum + batch.predictedCount, 0)
+  const chartData = batches.map((batch) => ({
+    name: batch.meal?.name ?? 'Repas',
+    cible: batch.predictedCount,
+    prepare: batch.preparedCount,
+  }))
   return (
-    <div className="max-w-6xl mx-auto flex flex-col gap-8">
-      {/* HEADER BANDS */}
-      <div className="flex justify-between items-center bg-night-2 p-6 rounded-2xl border border-sage/20">
+    <div className="mx-auto flex max-w-6xl flex-col gap-6 lg:gap-8">
+      {!isOnline && (
+        <div
+          className="rounded-xl border border-warn/60 bg-warn/15 p-4 text-sm text-paper"
+          role="alert"
+        >
+          <strong>Hors ligne.</strong> Les quantités affichées restent consultables, mais aucune
+          action ne sera enregistrée.
+        </div>
+      )}
+      <header className="flex flex-col gap-4 rounded-2xl border border-sage/20 bg-night-2 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
         <div>
-          <h2 className="text-xl text-sage">Date du jour</h2>
-          <p className="text-2xl font-bold">
-            {new Date().toLocaleDateString('fr-FR', {
+          <p className="text-sm font-bold uppercase tracking-wider text-sage">
+            Le bon repas. Au bon moment.
+          </p>
+          <h1 className="mt-2 font-display text-3xl font-bold capitalize sm:text-5xl">
+            {new Date(`${serviceDate}T12:00:00`).toLocaleDateString('fr-FR', {
               weekday: 'long',
               day: 'numeric',
               month: 'long',
             })}
+          </h1>
+          <p className="mt-1 text-sm text-sage">
+            Saisissez les quantités préparées, puis validez les tickets au retrait.
           </p>
         </div>
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
+          <label className="flex flex-col gap-1 text-sm font-bold text-sage" htmlFor="service-date">
+            Date de service
+            <input
+              id="service-date"
+              type="date"
+              value={serviceDate}
+              onChange={(event) => setServiceDate(event.target.value)}
+              className="min-h-11 rounded-xl border border-sage/45 bg-night px-3 font-mono text-paper focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-glow"
+            />
+          </label>
+          <button
+            onClick={refresh}
+            disabled={!isOnline}
+            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-sage/45 px-4 font-bold hover:bg-sage/15 disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-glow"
+          >
+            <RefreshCw className="size-4" aria-hidden="true" />
+            Actualiser
+          </button>
+        </div>
+      </header>
+
+      {/* Barre d'onglets pour navigation fluide du cuisinier */}
+      <nav
+        aria-label="Espaces cuisine"
+        className="flex flex-wrap gap-2 border-b border-sage/20 pb-3"
+      >
         <button
-          onClick={() => {
-            queryClient.invalidateQueries({ queryKey: ['kitchen'] })
-            toast('Données actualisées')
-          }}
-          className="px-6 py-3 bg-sage/20 text-paper rounded-full font-bold hover:bg-sage/30 transition-colors"
+          type="button"
+          onClick={() => setActiveTab('comptoir')}
+          className={`inline-flex min-h-12 items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-bold transition-all focus-visible:outline-2 focus-visible:outline-glow ${
+            activeTab === 'comptoir'
+              ? 'bg-glow text-night shadow-md'
+              : 'border border-sage/25 bg-night-2 text-sage hover:text-paper'
+          }`}
         >
-          Actualiser
+          <ClipboardCheck className="size-4" />
+          Retraits & Comptoir
         </button>
-      </div>
+        <button
+          type="button"
+          onClick={() => setActiveTab('reception')}
+          className={`inline-flex min-h-12 items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-bold transition-all focus-visible:outline-2 focus-visible:outline-glow ${
+            activeTab === 'reception'
+              ? 'bg-glow text-night shadow-md'
+              : 'border border-sage/25 bg-night-2 text-sage hover:text-paper'
+          }`}
+        >
+          <Truck className="size-4" />
+          Livraisons & Ruptures
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab('production')}
+          className={`inline-flex min-h-12 items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-bold transition-all focus-visible:outline-2 focus-visible:outline-glow ${
+            activeTab === 'production'
+              ? 'bg-glow text-night shadow-md'
+              : 'border border-sage/25 bg-night-2 text-sage hover:text-paper'
+          }`}
+        >
+          <ChefHat className="size-4" />
+          Production & Prévisions
+        </button>
+      </nav>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* A PREPARER */}
-        <div className="bg-night-2 p-8 rounded-2xl border border-glow/30 shadow-[0_0_30px_rgba(var(--color-glow),0.1)]">
-          <h2 className="text-2xl font-display font-bold mb-6 flex items-center gap-2">
-            <span className="w-3 h-3 rounded-full bg-glow animate-pulse"></span>À préparer
-          </h2>
-          <div className="text-center mb-8">
-            <p className="text-6xl font-display font-bold text-glow">
-              {totalPrepared} <span className="text-2xl text-sage">/ {totalPredicted}</span>
-            </p>
-            <p className="text-sage mt-2">Total repas aujourd&apos;hui</p>
-          </div>
-
-          <div className="flex flex-col gap-6">
-            {batches?.map((batch) => {
-              const progress =
-                batch.predictedCount > 0 ? (batch.preparedCount / batch.predictedCount) * 100 : 0
-              return (
-                <div key={batch.id} className="bg-night p-4 rounded-xl border border-sage/20">
-                  <div className="flex justify-between items-center mb-4">
-                    <p className="font-bold text-lg">{batch.meal?.name || 'Repas'}</p>
-                    <div className="flex items-center gap-3">
-                      <button
-                        onClick={() =>
-                          updateBatch.mutate({
-                            id: batch.id,
-                            preparedCount: Math.max(0, batch.preparedCount - 10),
-                          })
-                        }
-                        className="p-2 bg-sage/20 rounded-full hover:bg-sage/40"
-                      >
-                        <Minus className="w-5 h-5" />
-                      </button>
-                      <span className="text-2xl font-bold w-12 text-center">
-                        {batch.preparedCount}
-                      </span>
-                      <button
-                        onClick={() =>
-                          updateBatch.mutate({
-                            id: batch.id,
-                            preparedCount: batch.preparedCount + 10,
-                          })
-                        }
-                        className="p-2 bg-sage/20 rounded-full hover:bg-sage/40"
-                      >
-                        <Plus className="w-5 h-5" />
-                      </button>
-                    </div>
-                  </div>
-                  <div className="h-2 bg-night-2 rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-glow transition-all"
-                      style={{ width: `${Math.min(100, progress)}%` }}
-                    ></div>
-                  </div>
-                </div>
-              )
-            })}
-            {(!batches || batches.length === 0) && (
-              <p className="text-center text-sage py-8">Aucun batch pour aujourd&apos;hui</p>
-            )}
-          </div>
+      {/* ONGLET 1 : COMPTOIR & RETRAITS */}
+      {activeTab === 'comptoir' && (
+        <div className="space-y-6">
+          <KitchenTicketDesk
+            isOnline={isOnline}
+            onCompleted={() => void queryClient.invalidateQueries({ queryKey: ['kitchen'] })}
+          />
+          <KitchenStandaloneCounter serviceDate={serviceDate} />
         </div>
+      )}
 
-        <div className="flex flex-col gap-8">
-          {/* TICKET VALIDATION */}
-          <div className="bg-night-2 p-6 rounded-2xl border border-sage/20">
-            <h2 className="text-xl font-bold mb-4">Valider un ticket</h2>
-            <form
-              onSubmit={(e) => {
-                e.preventDefault()
-                if (ticketToken) validateTicket.mutate(ticketToken)
-              }}
-              className="flex gap-4"
-            >
-              <input
-                type="text"
-                value={ticketToken}
-                onChange={(e) => setTicketToken(e.target.value)}
-                placeholder="Scanner QR ou code..."
-                className="flex-1 bg-night border border-sage/40 p-4 rounded-xl font-mono text-xl focus:outline-none focus:border-glow"
-              />
-              <button
-                type="submit"
-                disabled={validateTicket.isPending || !ticketToken}
-                className="px-8 bg-forest text-paper font-bold rounded-xl hover:bg-forest/80 disabled:opacity-50"
-              >
-                {validateTicket.isPending ? <Loader2 className="animate-spin" /> : 'Valider'}
-              </button>
-            </form>
-          </div>
+      {/* ONGLET 2 : LIVRAISONS & RUPTURES */}
+      {activeTab === 'reception' && (
+        <div className="space-y-6">
+          <KitchenReceptionPanel serviceDate={serviceDate} />
+          <KitchenShortageManager serviceDate={serviceDate} />
+        </div>
+      )}
 
-          {/* AI CHART */}
-          <div className="bg-night-2 p-6 rounded-2xl border border-sage/20">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xl font-bold">Prévision IA</h2>
-              <span className="px-3 py-1 bg-glow/20 text-glow rounded-full text-xs font-bold border border-glow/30">
-                {forecastData?.forecasts?.[0]?.method === 'FALLBACK' ? 'Secours' : 'Méthode STAT'}
-              </span>
-            </div>
-            <div className="h-[300px] w-full min-h-[300px] min-w-0">
-              <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
-                <ComposedChart
-                  data={chartData}
-                  margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" />
-                  <XAxis
-                    dataKey="name"
-                    stroke="#ffffff50"
-                    fontSize={12}
-                    tickLine={false}
-                    axisLine={false}
-                  />
-                  <YAxis stroke="#ffffff50" fontSize={12} tickLine={false} axisLine={false} />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: '#1a1a1a',
-                      borderColor: '#ffffff20',
-                      borderRadius: '8px',
-                    }}
-                    itemStyle={{ color: '#fff' }}
-                  />
-                  <Area
-                    type="monotone"
-                    dataKey="prevision"
-                    fill="url(#colorPv)"
-                    stroke="var(--color-glow)"
-                    strokeDasharray="5 5"
-                    fillOpacity={0.1}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="reserve"
-                    stroke="var(--color-forest)"
-                    strokeWidth={3}
-                    dot={{ r: 4 }}
-                    activeDot={{ r: 6 }}
-                  />
-                  <defs>
-                    <linearGradient id="colorPv" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="var(--color-glow)" stopOpacity={0.3} />
-                      <stop offset="95%" stopColor="var(--color-glow)" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                </ComposedChart>
-              </ResponsiveContainer>
-            </div>
-            {forecastData?.evaluations?.[0] && (
-              <p className="text-xs text-sage mt-4 text-center">
-                MAE: {forecastData.evaluations[0].modelMAE?.toFixed(1) || '?'} vs Baseline{' '}
-                {forecastData.evaluations[0].naiveMAE?.toFixed(1) || '?'}
+      {/* ONGLET 3 : PRODUCTION & PRÉVISIONS */}
+      {activeTab === 'production' && (
+        <div className="space-y-6">
+          <section aria-label="Production du service" className="grid grid-cols-2 gap-3 sm:gap-5">
+            <article className="rounded-[2rem] bg-glow p-5 text-night sm:p-8">
+              <p className="text-xs font-bold uppercase tracking-widest">Repas à préparer</p>
+              <p className="mt-3 font-display text-5xl font-bold tabular-nums sm:text-7xl">
+                {totalPredicted}
               </p>
-            )}
-          </div>
-        </div>
-      </div>
-
-      <BeamAnimation />
-
-      {/* AI ALERTS */}
-      <div className="bg-night-2 p-6 rounded-2xl border border-sage/20">
-        <h2 className="text-xl font-bold mb-6">Alertes & Analyse</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {forecastData?.forecasts?.map((f: Forecast) => (
-            <div
-              key={f.mealId}
-              className="flex gap-4 p-4 rounded-xl bg-night border border-sage/20"
-            >
-              <div className="pt-1">
-                {f.method === 'FALLBACK' ? (
-                  <AlertTriangle className="text-warn w-6 h-6" />
-                ) : (
-                  <Info className="text-sage w-6 h-6" />
-                )}
+              <p className="mt-2 text-sm">La cible de votre prochain service</p>
+            </article>
+            <article className="rounded-[2rem] border border-sage/25 bg-night-2 p-5 sm:p-8">
+              <p className="text-xs font-bold uppercase tracking-widest text-sage">Déjà préparés</p>
+              <p className="mt-3 font-display text-5xl font-bold tabular-nums text-ok sm:text-7xl">
+                {totalPrepared}
+              </p>
+              <p className="mt-2 text-sm text-sage">Chaque portion compte.</p>
+            </article>
+          </section>
+          <div className="grid gap-6 lg:grid-cols-2">
+            <section className="rounded-2xl border border-glow/35 bg-night-2 p-5 sm:p-7">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <h2 className="font-display text-2xl font-bold">À préparer</h2>
+                  <p className="mt-1 text-sm text-sage">
+                    Cible fondée sur les réservations et la prévision.
+                  </p>
+                </div>
+                <span className="rounded-full bg-glow/15 px-3 py-1 text-sm font-bold text-glow">
+                  {totalPrepared}/{totalPredicted}
+                </span>
               </div>
+              {batchesQuery.isLoading ? (
+                <div className="mt-6 h-40 animate-pulse rounded-xl bg-night" />
+              ) : batchesQuery.isError ? (
+                <div className="pt-5">
+                  <ScreenState kind="error" retry={() => void batchesQuery.refetch()} />
+                </div>
+              ) : batches.length === 0 ? (
+                <div className="pt-5">
+                  <ScreenState kind="empty" />
+                </div>
+              ) : (
+                <div className="mt-6 space-y-4">
+                  {batches.map((batch) => {
+                    const progress = batch.predictedCount
+                      ? Math.min(
+                          100,
+                          Math.round((batch.preparedCount / batch.predictedCount) * 100),
+                        )
+                      : 0
+                    const busy = updateBatch.isPending
+                    return (
+                      <article
+                        key={batch.id}
+                        className="rounded-xl border border-sage/20 bg-night p-4"
+                      >
+                        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                          <div>
+                            <h3 className="font-bold">{batch.meal?.name ?? 'Repas'}</h3>
+                            <p className="text-sm text-sage">
+                              {batch.preparedCount} préparés · cible {batch.predictedCount}
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <button
+                              aria-label={`Retirer 10 repas pour ${batch.meal?.name ?? 'ce repas'}`}
+                              onClick={() =>
+                                updateBatch.mutate({
+                                  id: batch.id,
+                                  preparedCount: Math.max(0, batch.preparedCount - 10),
+                                })
+                              }
+                              disabled={busy || !isOnline}
+                              className="grid size-11 place-items-center rounded-xl bg-sage/15 hover:bg-sage/30 disabled:opacity-50"
+                            >
+                              <Minus className="size-5" />
+                            </button>
+                            <output
+                              className="min-w-11 text-center text-xl font-bold"
+                              aria-live="polite"
+                            >
+                              {batch.preparedCount}
+                            </output>
+                            <button
+                              aria-label={`Ajouter 10 repas pour ${batch.meal?.name ?? 'ce repas'}`}
+                              onClick={() =>
+                                updateBatch.mutate({
+                                  id: batch.id,
+                                  preparedCount: batch.preparedCount + 10,
+                                })
+                              }
+                              disabled={busy || !isOnline}
+                              className="grid size-11 place-items-center rounded-xl bg-sage/15 hover:bg-sage/30 disabled:opacity-50"
+                            >
+                              <Plus className="size-5" />
+                            </button>
+                          </div>
+                        </div>
+                        <div
+                          className="mt-4 h-2 overflow-hidden rounded-full bg-night-2"
+                          aria-label={`${progress}% de la cible préparée`}
+                          role="progressbar"
+                          aria-valuenow={progress}
+                          aria-valuemin={0}
+                          aria-valuemax={100}
+                        >
+                          <div
+                            className="h-full bg-glow transition-[width] motion-reduce:transition-none"
+                            style={{ width: `${progress}%` }}
+                          />
+                        </div>
+                      </article>
+                    )
+                  })}
+                </div>
+              )}
+            </section>
+            <div className="space-y-6">
+              <section className="min-w-0 rounded-2xl border border-sage/20 bg-night-2 p-5 sm:p-6">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <h2 className="font-display text-2xl font-bold">Cible de service</h2>
+                    <p className="mt-1 text-sm text-sage">
+                      Comparaison des quantités préparées et prévues par plat.
+                    </p>
+                  </div>
+                  <span className="rounded-full border border-sage/30 px-3 py-1 text-xs font-bold text-sage">
+                    {forecasts[0]?.method === 'FALLBACK'
+                      ? 'Mode secours'
+                      : 'Estimation statistique'}
+                  </span>
+                </div>
+                {chartData.length ? (
+                  <div className="mt-5 h-64 w-full min-w-0 min-h-[256px]">
+                    <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={256}>
+                      <ComposedChart
+                        data={chartData}
+                        margin={{ top: 10, right: 8, left: -22, bottom: 0 }}
+                      >
+                        <CartesianGrid strokeDasharray="3 3" stroke="#ffffff18" />
+                        <XAxis
+                          dataKey="name"
+                          stroke="#ffffff80"
+                          fontSize={12}
+                          tickLine={false}
+                          axisLine={false}
+                        />
+                        <YAxis stroke="#ffffff80" fontSize={12} tickLine={false} axisLine={false} />
+                        <Tooltip
+                          contentStyle={{
+                            backgroundColor: '#203c30',
+                            borderColor: '#ffffff30',
+                            borderRadius: '12px',
+                          }}
+                        />
+                        <Area
+                          isAnimationActive={false}
+                          type="monotone"
+                          dataKey="cible"
+                          name="Cible"
+                          fill="var(--color-glow)"
+                          stroke="var(--color-glow)"
+                          fillOpacity={0.13}
+                        />
+                        <Area
+                          isAnimationActive={false}
+                          type="monotone"
+                          dataKey="prepare"
+                          name="Préparé"
+                          fill="var(--color-forest)"
+                          stroke="var(--color-forest)"
+                          fillOpacity={0.28}
+                        />
+                      </ComposedChart>
+                    </ResponsiveContainer>
+                  </div>
+                ) : (
+                  <p className="py-8 text-center text-sm text-sage">Aucune donnée à comparer.</p>
+                )}
+              </section>
+            </div>
+          </div>
+
+          <section className="rounded-2xl border border-sage/20 bg-night-2 p-5 sm:p-6">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <h4 className="font-bold text-lg mb-1">{f.mealName || 'Repas'}</h4>
-                <p className="text-sage text-sm mb-2">
-                  {f.explanation || 'Prévision générée automatiquement.'}
-                </p>
-                <p className="text-xs text-ink/50">
-                  Intervalle de confiance : {f.lower} - {f.upper} repas
+                <h2 className="font-display text-2xl font-bold">Répartition par créneau</h2>
+                <p className="mt-1 text-sm text-sage">
+                  Quantités réservées par produit et par créneau de retrait.
                 </p>
               </div>
             </div>
-          ))}
-          {(!forecastData?.forecasts || forecastData.forecasts.length === 0) && (
-            <p className="text-sage py-4">Aucune prévision pour aujourd&apos;hui</p>
-          )}
+            <div className="mt-6">
+              {slotsSummaryQuery.isLoading ? (
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                  <div className="h-28 animate-pulse rounded-xl bg-night" />
+                  <div className="h-28 animate-pulse rounded-xl bg-night" />
+                  <div className="h-28 animate-pulse rounded-xl bg-night" />
+                </div>
+              ) : slotsSummary.length === 0 ? (
+                <p className="text-center text-sm text-sage">Aucun créneau prévu à cette date.</p>
+              ) : (
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                  {slotsSummary.map((slot) => (
+                    <article
+                      key={slot.id}
+                      className="rounded-xl border border-sage/20 bg-night p-4 flex flex-col"
+                    >
+                      <div className="flex items-center justify-between border-b border-sage/10 pb-3">
+                        <span className="font-mono text-lg font-bold text-glow">
+                          {slot.startTime} - {slot.endTime}
+                        </span>
+                        <span className="rounded-full bg-forest/20 px-2.5 py-1 text-xs font-bold text-forest">
+                          {slot.totalCount} repas
+                        </span>
+                      </div>
+                      <ul className="mt-3 flex-1 space-y-2">
+                        {slot.products.map((product) => (
+                          <li
+                            key={product.id}
+                            className="flex items-center justify-between text-sm"
+                          >
+                            <span className="truncate pr-2">
+                              {product.name}
+                              <span className="ml-2 text-[10px] uppercase text-sage">
+                                {product.productType === 'MAIN'
+                                  ? 'plat'
+                                  : product.productType === 'SIDE'
+                                    ? 'périphérique'
+                                    : 'supplément'}
+                              </span>
+                            </span>
+                            <span className="font-bold">{product.count}</span>
+                          </li>
+                        ))}
+                        {slot.products.length === 0 && (
+                          <li className="text-sm text-sage italic">Aucune commande</li>
+                        )}
+                      </ul>
+                    </article>
+                  ))}
+                </div>
+              )}
+            </div>
+          </section>
+
+          <section className="rounded-2xl border border-sage/20 bg-night-2 p-5 sm:p-6">
+            <div className="flex items-center gap-2">
+              <Info className="size-5 text-glow" />
+              <h2 className="font-display text-2xl font-bold">Analyse de production</h2>
+            </div>
+            <p className="mt-1 text-sm text-sage">
+              Indications issues des données de démonstration ; elles aident à ajuster la
+              production, sans garantir un volume final.
+            </p>
+            <div className="mt-5 grid gap-4 md:grid-cols-2">
+              {forecastQuery.isLoading ? (
+                <>
+                  <div className="h-28 animate-pulse rounded-xl bg-night" />
+                  <div className="h-28 animate-pulse rounded-xl bg-night" />
+                </>
+              ) : forecasts.length ? (
+                forecasts.map((forecast) => (
+                  <article
+                    key={forecast.mealId}
+                    className="rounded-xl border border-sage/20 bg-night p-4"
+                  >
+                    <div className="flex gap-3">
+                      <span className="pt-1">
+                        {forecast.method === 'FALLBACK' ? (
+                          <AlertTriangle className="size-5 text-warn" />
+                        ) : (
+                          <Info className="size-5 text-glow" />
+                        )}
+                      </span>
+                      <div>
+                        <h3 className="font-bold">{forecast.mealName ?? 'Repas'}</h3>
+                        <p className="mt-1 text-sm text-sage">
+                          Cible : {forecast.predicted} repas · fourchette {forecast.lower}–
+                          {forecast.upper}
+                        </p>
+                        <p className="mt-2 text-sm text-paper/85">
+                          {forecast.explanation ??
+                            'Estimation générée à partir des données disponibles.'}
+                        </p>
+                      </div>
+                    </div>
+                  </article>
+                ))
+              ) : (
+                <p className="text-sage">Aucune recommandation pour cette date.</p>
+              )}
+            </div>
+          </section>
         </div>
-      </div>
+      )}
     </div>
   )
 }

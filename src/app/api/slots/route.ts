@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { toHttpResponse } from '@/server/errors'
 import db from '@/server/db'
 import { requireSessionUser } from '@/server/auth/session'
+import { parseDateQuery } from '@/server/http/query'
 import crypto from 'crypto'
 
 export async function GET(req: NextRequest) {
@@ -10,8 +11,7 @@ export async function GET(req: NextRequest) {
     await requireSessionUser()
 
     const { searchParams } = new URL(req.url)
-    const dateStr = searchParams.get('date')
-    const date = dateStr ? new Date(dateStr) : new Date()
+    const date = parseDateQuery(searchParams.get('date')) ?? new Date()
 
     const slots = await db.slot.findMany({
       where: { date },

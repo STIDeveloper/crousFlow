@@ -1,76 +1,60 @@
-import { getHistory } from './forecast'
 import db from '../db'
+import { baseline, getHistory, naiveBaseline } from './forecast'
+
+export { naiveBaseline } from './forecast'
 
 export function meanAbsoluteError(predictions: number[], actuals: number[]): number {
-  if (predictions.length === 0 || actuals.length === 0) return 0
+  const count = Math.min(predictions.length, actuals.length)
+  if (count === 0) return 0
   let sum = 0
-  for (let i = 0; i < predictions.length; i++) {
-    sum += Math.abs(predictions[i] - actuals[i])
-  }
-  return sum / predictions.length
+  for (let index = 0; index < count; index += 1)
+    sum += Math.abs(predictions[index] - actuals[index])
+  return sum / count
 }
 
 export function meanAbsolutePercentageError(predictions: number[], actuals: number[]): number {
-  if (predictions.length === 0 || actuals.length === 0) return 0
+  const count = Math.min(predictions.length, actuals.length)
+  if (count === 0) return 0
   let sum = 0
-  let validCount = 0
-  for (let i = 0; i < predictions.length; i++) {
-    if (actuals[i] > 0) {
-      sum += Math.abs(predictions[i] - actuals[i]) / actuals[i]
-      validCount++
+  let nonZeroActuals = 0
+  for (let index = 0; index < count; index += 1) {
+    if (actuals[index] > 0) {
+      sum += Math.abs(predictions[index] - actuals[index]) / actuals[index]
+      nonZeroActuals += 1
     }
   }
-  return validCount > 0 ? (sum / validCount) * 100 : 0
-}
-
-export function naiveBaseline(history: number[]): number {
-  return history.length > 0 ? history[0] : 0 // The most recent one (last week)
+  return nonZeroActuals === 0 ? 0 : (sum / nonZeroActuals) * 100
 }
 
 export async function evaluateForecast(mealId: string, weeksBack = 4) {
   const modelPredictions: number[] = []
   const naivePredictions: number[] = []
   const actuals: number[] = []
-
   const today = new Date()
   today.setUTCHours(0, 0, 0, 0)
 
-  for (let i = 1; i <= weeksBack; i++) {
+  for (let offset = 1; offset <= weeksBack; offset += 1) {
     const targetDate = new Date(today)
-    targetDate.setUTCDate(today.getUTCDate() - i * 7)
-
-    // Get actual
-    const count = await db.reservation.count({
+    targetDate.setUTCDate(today.getUTCDate() - offset * 7)
+    const actual = await db.reservation.count({
       where: {
         menuItem: { mealId, date: targetDate },
         status: { in: ['CONFIRMED', 'CONSUMED'] },
       },
     })
+    const history = await getHistory(mealId, targetDate, 12)
+    if (actual === 0 || history.every((count) => count === 0)) continue
 
-    if (count > 0) {
-      actuals.push(count)
-
-      const history = await getHistory(mealId, targetDate, 12)
-
-      // Simulate predictDemand logic at that point in time
-      const base = naiveBaseline(history)
-      naivePredictions.push(base)
-
-      // Model prediction (without live adjustments for simplicity in eval)
-      let sum = 0
-      let weightSum = 0
-      for (let j = 0; j < history.length; j++) {
-        const weight = history.length - j
-        sum += history[j] * weight
-        weightSum += weight
-      }
-      modelPredictions.push(weightSum > 0 ? Math.round(sum / weightSum) : 0)
-    }
+    actuals.push(actual)
+    modelPredictions.push(Math.max(0, Math.round(baseline(history))))
+    naivePredictions.push(naiveBaseline(history))
   }
 
   const modelMAE = meanAbsoluteError(modelPredictions, actuals)
   const naiveMAE = meanAbsoluteError(naivePredictions, actuals)
-  const improvement = naiveMAE > 0 ? ((naiveMAE - modelMAE) / naiveMAE) * 100 : 0
+  const modelMAPE = meanAbsolutePercentageError(modelPredictions, actuals)
+  const naiveMAPE = meanAbsolutePercentageError(naivePredictions, actuals)
+  const improvement = naiveMAE === 0 ? 0 : ((naiveMAE - modelMAE) / naiveMAE) * 100
 
-  return { modelMAE, naiveMAE, improvement }
+  return { modelMAE, naiveMAE, modelMAPE, naiveMAPE, improvement, sampleSize: actuals.length }
 }

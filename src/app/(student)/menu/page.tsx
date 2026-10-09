@@ -1,9 +1,11 @@
 import { WeekPlanner } from '@/components/features/WeekPlanner'
+import { getSessionUser } from '@/server/auth/session'
 
-export default function MenuPage() {
+export default async function MenuPage() {
+  const user = await getSessionUser().catch(() => null)
   return (
     <div className="min-h-screen bg-paper pb-20">
-      <WeekPlanner />
+      <WeekPlanner canReserve={user?.role === 'STUDENT'} />
     </div>
   )
 }

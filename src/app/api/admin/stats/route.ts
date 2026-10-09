@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { requireSessionUser, requireRole } from '@/server/auth/session'
+import { toHttpResponse } from '@/server/errors'
 import db from '@/server/db'
 export async function GET() {
   try {
@@ -61,7 +62,8 @@ export async function GET() {
       noShowRate,
       chartData,
     })
-  } catch {
-    return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 })
+  } catch (err) {
+    const { status, body } = toHttpResponse(err, 'stats')
+    return NextResponse.json(body, { status })
   }
 }

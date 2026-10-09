@@ -4,16 +4,17 @@ import { createReservation } from '@/server/reservations/create'
 import { createReservationSchema } from '@/lib/schemas/reservation'
 import { requireSessionUser } from '@/server/auth/session'
 import { checkRateLimit } from '@/server/rate-limit'
+import { readJsonBody } from '@/server/http/body'
 import crypto from 'crypto'
 
 export async function POST(req: NextRequest) {
   const requestId = crypto.randomUUID()
   try {
     const user = await requireSessionUser()
+    if (user.role !== 'STUDENT') throw new AppError('FORBIDDEN', 'Réservé aux étudiants', 403)
     checkRateLimit(`create_res_${user.id}`, 10, 60000)
 
-    const body = await req.json().catch(() => null)
-    if (!body) throw new AppError('BAD_JSON', 'JSON malformé', 400)
+    const body = await readJsonBody(req)
 
     const parsed = createReservationSchema.safeParse(body)
     if (!parsed.success)

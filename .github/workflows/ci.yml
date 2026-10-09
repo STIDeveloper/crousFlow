@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: ["main"]
+    branches: ['main', 'master']
   pull_request:
-    branches: ["main"]
+    branches: ['main', 'master']
 
 jobs:
   build:
@@ -12,10 +12,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # Version lue depuis le champ packageManager de package.json
       - name: Setup pnpm
-        uses: pnpm/action-setup@v3
-        with:
-          version: 9
+        uses: pnpm/action-setup@v4
 
       - name: Setup Node.js 22
         uses: actions/setup-node@v4
@@ -24,7 +23,7 @@ jobs:
           cache: 'pnpm'
 
       - name: Install dependencies
-        run: pnpm install
+        run: pnpm install --frozen-lockfile
 
       - name: Lint
         run: pnpm lint
@@ -37,6 +36,9 @@ jobs:
 
       - name: Build
         run: pnpm build
+
+      - name: Check agent boundaries
+        run: pnpm check-boundaries
 
       - name: Security audit
         run: pnpm audit --prod

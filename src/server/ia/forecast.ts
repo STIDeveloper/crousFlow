@@ -1,106 +1,104 @@
 import db from '../db'
 
-// 12 semaines d'historique
-export async function getHistory(mealId: string, targetDate: Date, weeks = 12) {
-  const pastDates = []
-  for (let i = 1; i <= weeks; i++) {
-    const d = new Date(targetDate)
-    d.setUTCDate(d.getUTCDate() - i * 7)
-    pastDates.push(d)
-  }
+export type DemandPrediction = {
+  predictedCount: number
+  lower: number
+  upper: number
+  method: 'STAT' | 'FALLBACK'
+}
 
-  // on récupère les slots de ces jours-là et le nombre de réservations confirmées pour ce meal
-  const history = []
-  for (const date of pastDates) {
-    const slots = await db.slot.findMany({ where: { date } })
-    const slotIds = slots.map((s) => s.id)
+function atUtcMidnight(value: Date): Date {
+  const date = new Date(value)
+  date.setUTCHours(0, 0, 0, 0)
+  return date
+}
 
-    if (slotIds.length > 0) {
-      const count = await db.reservation.count({
+// The most recent week is first so weighted and naive forecasts use the same ordering.
+export async function getHistory(mealId: string, targetDate: Date, weeks = 12): Promise<number[]> {
+  const dates = Array.from({ length: weeks }, (_, index) => {
+    const date = atUtcMidnight(targetDate)
+    date.setUTCDate(date.getUTCDate() - (index + 1) * 7)
+    return date
+  })
+
+  return Promise.all(
+    dates.map((date) =>
+      db.reservation.count({
         where: {
-          menuItemId: { startsWith: `menu-${date.toISOString().split('T')[0]}-${mealId}` }, // Approximation
-          slotId: { in: slotIds },
-          status: 'CONFIRMED',
+          menuItem: { mealId, date },
+          status: { in: ['CONFIRMED', 'CONSUMED'] },
         },
-      })
-      history.push(count)
-    } else {
-      history.push(0)
-    }
-  }
-  return history
+      }),
+    ),
+  )
 }
 
 export function baseline(history: number[]): number {
   if (history.length === 0) return 0
-
-  // Poids décroissants (récent = max poids)
   let sum = 0
   let weightSum = 0
-
-  for (let i = 0; i < history.length; i++) {
-    const weight = history.length - i
-    sum += history[i] * weight
+  for (let index = 0; index < history.length; index += 1) {
+    const weight = history.length - index
+    sum += history[index] * weight
     weightSum += weight
   }
+  return weightSum === 0 ? 0 : sum / weightSum
+}
 
-  return weightSum > 0 ? sum / weightSum : 0
+export function naiveBaseline(history: number[]): number {
+  return history.find((count) => count > 0) ?? 0
 }
 
 export function adjustWithLiveReservations(
   base: number,
   liveCount: number,
   targetDate: Date,
+  now = new Date(),
 ): number {
-  const diffDays = (targetDate.getTime() - Date.now()) / (1000 * 3600 * 24)
-  if (diffDays >= 0 && diffDays <= 7) {
-    return base * 0.6 + liveCount * 0.4
-  }
-  return base
+  const diffDays = (atUtcMidnight(targetDate).getTime() - atUtcMidnight(now).getTime()) / 86_400_000
+  return diffDays >= 0 && diffDays <= 7 ? base * 0.6 + liveCount * 0.4 : base
 }
 
-export async function predictDemand(mealId: string, targetDate: Date) {
+export function predictionFromHistory(
+  history: number[],
+  liveCount: number,
+  targetDate: Date,
+  now = new Date(),
+): DemandPrediction {
+  const nonZeroHistory = history.filter((count) => count > 0)
+  const rawPrediction =
+    nonZeroHistory.length < 3
+      ? nonZeroHistory.length === 0
+        ? 0
+        : nonZeroHistory.reduce((sum, count) => sum + count, 0) / nonZeroHistory.length
+      : baseline(history)
+  const predictedCount = Math.max(
+    0,
+    Math.round(adjustWithLiveReservations(rawPrediction, liveCount, targetDate, now)),
+  )
+
+  return {
+    predictedCount,
+    lower: Math.round(predictedCount * 0.85),
+    upper: Math.round(predictedCount * 1.15),
+    method: nonZeroHistory.length < 3 ? 'FALLBACK' : 'STAT',
+  }
+}
+
+export async function predictDemand(mealId: string, targetDate: Date): Promise<DemandPrediction> {
   try {
-    const history = await getHistory(mealId, targetDate, 12)
-    // Historique insuffisant (< 3 semaines avec données non-nulles)
-    const validHistory = history.filter((h) => h > 0)
-
-    if (validHistory.length < 3) {
-      const naive =
-        validHistory.length > 0 ? validHistory.reduce((a, b) => a + b, 0) / validHistory.length : 0
-      return {
-        predictedCount: Math.round(naive),
-        lower: Math.round(naive * 0.85),
-        upper: Math.round(naive * 1.15),
-        method: 'FALLBACK',
-      }
-    }
-
-    const base = baseline(history)
-
-    // Réservations actuelles
-    const liveReservations = await db.reservation.count({
-      where: {
-        menuItem: { mealId, date: targetDate },
-        status: 'CONFIRMED',
-      },
-    })
-
-    const adjusted = adjustWithLiveReservations(base, liveReservations, targetDate)
-    const predictedCount = Math.round(adjusted)
-
-    return {
-      predictedCount,
-      lower: Math.round(predictedCount * 0.85),
-      upper: Math.round(predictedCount * 1.15),
-      method: 'STAT',
-    }
+    const normalizedDate = atUtcMidnight(targetDate)
+    const [history, liveCount] = await Promise.all([
+      getHistory(mealId, normalizedDate, 12),
+      db.reservation.count({
+        where: {
+          menuItem: { mealId, date: normalizedDate },
+          status: 'CONFIRMED',
+        },
+      }),
+    ])
+    return predictionFromHistory(history, liveCount, normalizedDate)
   } catch {
-    return {
-      predictedCount: 0,
-      lower: 0,
-      upper: 0,
-      method: 'FALLBACK',
-    }
+    return { predictedCount: 0, lower: 0, upper: 0, method: 'FALLBACK' }
   }
 }

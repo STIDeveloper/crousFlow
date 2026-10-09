@@ -3,6 +3,7 @@ import { toHttpResponse } from '@/server/errors'
 import { predictBatch } from '@/server/ia/batch'
 import { evaluateForecast } from '@/server/ia/evaluate'
 import { requireSessionUser, requireRole } from '@/server/auth/session'
+import { parseDateQuery } from '@/server/http/query'
 import crypto from 'crypto'
 
 export async function GET(req: NextRequest) {
@@ -12,8 +13,7 @@ export async function GET(req: NextRequest) {
     requireRole(user, ['KITCHEN', 'ADMIN'])
 
     const { searchParams } = new URL(req.url)
-    const dateStr = searchParams.get('date')
-    const date = dateStr ? new Date(dateStr) : new Date()
+    const date = parseDateQuery(searchParams.get('date')) ?? new Date()
 
     const batchResults = await predictBatch(date)
 

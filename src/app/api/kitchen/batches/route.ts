@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { parseDateQuery } from '@/server/http/query'
 import { toHttpResponse, AppError } from '@/server/errors'
 import { requireSessionUser, requireRole } from '@/server/auth/session'
 import { patchBatchSchema } from '@/lib/schemas/ia'
@@ -12,8 +13,7 @@ export async function GET(req: NextRequest) {
     requireRole(user, ['KITCHEN', 'ADMIN'])
 
     const { searchParams } = new URL(req.url)
-    const dateStr = searchParams.get('date')
-    const date = dateStr ? new Date(dateStr) : new Date()
+    const date = parseDateQuery(searchParams.get('date')) ?? new Date()
 
     const batches = await db.kitchenBatch.findMany({
       where: { date },

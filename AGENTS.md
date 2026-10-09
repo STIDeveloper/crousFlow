@@ -1,11 +1,13 @@
 # AGENTS.md — CrousFlow
 
 ## Contexte
+
 CrousFlow : plateforme de réservation de repas pour CROUS.
 Problème : files d'attente, gaspillage, précarité étudiante.
 Solution : réservation à l'avance, agrégation cuisine, prédiction IA.
 
 ## Agents
+
 - `main` : orchestrateur, découpe et route les tâches.
 - `frontend` : Next.js, Tailwind, shadcn/ui, motion, Magic UI.
 - `backend` : Prisma, API routes, validation Zod, Server Actions.
@@ -15,6 +17,7 @@ Solution : réservation à l'avance, agrégation cuisine, prédiction IA.
 - `ui-reviewer` : conformité DESIGN.md, accessibilité, états obligatoires.
 
 ## Règles globales
+
 - TypeScript strict. Jamais de `any`.
 - Validation Zod sur toutes les entrées.
 - Gestion d'erreur centralisée. Jamais d'écran blanc.

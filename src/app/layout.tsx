@@ -4,17 +4,17 @@ import { Providers } from '@/components/providers/Providers'
 import { Toaster } from 'sonner'
 
 const fraunces = Fraunces({
-  variable: '--font-display',
+  variable: '--font-fraunces',
   subsets: ['latin'],
 })
 
 const geistSans = Geist({
-  variable: '--font-sans',
+  variable: '--font-geist-sans',
   subsets: ['latin'],
 })
 
 const geistMono = Geist_Mono({
-  variable: '--font-mono',
+  variable: '--font-geist-mono',
   subsets: ['latin'],
 })
 
