@@ -1,5 +1,7 @@
 # CrousFlow
 
+[![CI](https://github.com/STIDeveloper/crousFlow/actions/workflows/ci.yml/badge.svg)](https://github.com/STIDeveloper/crousFlow/actions/workflows/ci.yml)
+
 Plateforme moderne de réservation de repas pour les CROUS.
 
 ## Le Problème
@@ -71,12 +73,31 @@ CrousFlow/
 └── screenshots/       # Captures d'écran de l'application
 ```
 
-## Les Agents (Harness)
+## Le harness (la chaîne qui a construit l'app)
 
-Ce projet a été développé en collaboration par 12 agents autonomes (voir `.opencode/` et `AGENTS.md`) : `main`, `frontend`, `backend`, `ia`, `chaos`, `qa`, `ui-reviewer`, `security`, `architect`, `data`, `docs`, `devops`. Les agents se coordonnent via des portes (G1 à G5).
+| Élément | Où | Rôle |
+| --- | --- | --- |
+| 12 agents | `.opencode/agents/` | `main` (orchestrateur, seul à déléguer) + 11 subagents : architect, backend, data, ia, frontend, chaos, qa, ui-reviewer, security, devops, docs |
+| Droits | en-tête de chaque agent + `.opencode/ownership.json` | permissions `edit` / `bash` / `task` par agent, et un propriétaire unique par chemin |
+| Rules | `AGENTS.md`, `.opencode/rules/` | pipeline à portes G1 → G5, règles projet (Zod partout, jamais d'écran blanc, TDD) |
+| MCP | `opencode.json` | `playwright` (navigateur, réservé à ui-reviewer), `context7` (docs à jour Next 16 / Prisma 7) |
+| Commands | `.opencode/command/` | `/check`, `/chaos`, `/demo-reset`, `/new-task` |
+| Skills | `.opencode/skills/` | `crous-ui-review` (revue contre DESIGN.md), `chaos-case` (ajout d'un cas de robustesse) |
+| Hooks | `.husky/` | pre-commit : lint-staged, typecheck, tests, build |
+| CI | `.github/workflows/ci.yml` | install → lint → typecheck → test → build → check-boundaries → audit |
+| Traçabilité | `docs/tasks/`, `docs/adr/`, `docs/reviews/` | fiches de tâche par agent, décisions d'architecture, verdicts UI et sécurité |
+
+Un commit `type(agent): …` qui touche un fichier hors du périmètre de l'agent est refusé par `pnpm check-boundaries`, en local comme en CI.
 
 ## Captures
 
-Visualisez les écrans dans le dossier [`screenshots/`](./screenshots).
+Application : [`screenshots/`](./screenshots). Chaîne au travail : [`screenshots/chaine/`](./screenshots/chaine).
+
+| | |
+| --- | --- |
+| ![Accueil](screenshots/01-home-desktop.png) | ![Menu de la semaine](screenshots/03-menu-desktop.png) |
+| ![Tickets QR](screenshots/05-tickets-desktop.png) | ![Cuisine](screenshots/07-kitchen-dark-desktop.png) |
+| ![Console chaos 24/24](screenshots/09-chaos-dark-desktop.png) | ![CI verte](screenshots/chaine/04-ci-github-actions.png) |
+| ![Tests](screenshots/chaine/01-tests-vitest.png) | ![Garde-fou des frontières](screenshots/chaine/02-garde-fou-frontieres.png) |
 
 > **Note :** Ceci est une application de démonstration. Toutes les données sont générées aléatoirement (fictives). Aucune donnée personnelle réelle n'est manipulée.
