@@ -17,7 +17,7 @@ CrousFlow permet la réservation à l'avance, consolide les données pour la cui
 - **Framework** : Next.js 16.4 + React 19.3
 - **Base de données** : Prisma 7 + SQLite (better-sqlite3)
 - **UI** : Tailwind 4.3 + shadcn/ui + motion
-- **IA** : Vercel AI SDK + @ai-sdk/google (gemini-3.8-flash, configurable via `GEMINI_MODEL`)
+- **IA** : Vercel AI SDK + @ai-sdk/google (gemini-3.5-flash-lite, configurable via `GEMINI_MODEL`)
 - **QA** : Vitest + Playwright
 
 ## Installation
@@ -37,7 +37,9 @@ Pour une démo sur une base neuve, sans toucher `dev.db` : `pnpm build` puis `pn
 
 ### IA (optionnelle)
 
-Les quantités sont calculées par un modèle statistique (moyenne mobile pondérée sur 12 semaines). Gemini sert seulement à rédiger l'explication. Sans clé `GOOGLE_GENERATIVE_AI_API_KEY`, ou si Gemini ne répond pas sous 5 s, une explication calculée localement prend le relais. Clé gratuite : https://aistudio.google.com/apikey
+Les quantités sont calculées par un modèle statistique (moyenne mobile pondérée sur 12 semaines). Gemini rédige seulement l'explication et l'action conseillée de chaque plat (écran Cuisine → Production & Prévisions, badge « Expliqué par Gemini »). Les réponses sont mises en cache 10 min, et un plat sans aucune demande n'appelle pas Gemini.
+
+Sans clé, ou si Gemini ne répond pas sous 5 s, une explication calculée localement prend le relais (badge « Calcul local »). Pour activer Gemini, mets ta propre clé API (gratuite : https://aistudio.google.com/apikey) dans `.env` : `GOOGLE_GENERATIVE_AI_API_KEY="..."`.
 
 ## Vérifications
 
@@ -98,6 +100,7 @@ Application : [`screenshots/`](./screenshots). Chaîne au travail : [`screenshot
 | ![Accueil](screenshots/01-home-desktop.png) | ![Menu de la semaine](screenshots/03-menu-desktop.png) |
 | ![Tickets QR](screenshots/05-tickets-desktop.png) | ![Cuisine](screenshots/07-kitchen-dark-desktop.png) |
 | ![Console chaos 24/24](screenshots/09-chaos-dark-desktop.png) | ![CI verte](screenshots/chaine/04-ci-github-actions.png) |
+| ![Explications Gemini en cuisine](screenshots/11-kitchen-ia-gemini.png) | ![Ticket bidon refusé](screenshots/10-kitchen-ticket-refuse.png) |
 | ![Tests](screenshots/chaine/01-tests-vitest.png) | ![Garde-fou des frontières](screenshots/chaine/02-garde-fou-frontieres.png) |
 
 > **Note :** Ceci est une application de démonstration. Toutes les données sont générées aléatoirement (fictives). Aucune donnée personnelle réelle n'est manipulée.
