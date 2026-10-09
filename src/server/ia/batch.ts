@@ -1,5 +1,6 @@
 import db from '../db'
-import { predictDemand } from './forecast'
+import { getHistory, predictDemand } from './forecast'
+import { explainForecastWithSource, type SourcedExplanation } from './explain'
 import { ForecastMethod } from '@prisma/client'
 
 export async function predictBatch(date: Date) {
@@ -74,4 +75,42 @@ export async function predictBatch(date: Date) {
   }
 
   return results
+}
+
+export type BatchForecast = Awaited<ReturnType<typeof predictBatch>>[number]
+export type ExplainedForecast = BatchForecast & SourcedExplanation
+
+/**
+ * Ajoute à chaque prévision une explication (Gemini ou repli local).
+ * Les quantités restent celles du modèle statistique : le LLM ne fait que commenter.
+ */
+export async function explainForecasts(
+  date: Date,
+  forecasts: BatchForecast[],
+): Promise<ExplainedForecast[]> {
+  return Promise.all(
+    forecasts.map(async (forecast) => {
+      const [history, actualReservations] = await Promise.all([
+        getHistory(forecast.mealId, date),
+        db.reservation.count({
+          where: {
+            menuItem: { mealId: forecast.mealId, date },
+            status: { in: ['CONFIRMED', 'CONSUMED'] },
+          },
+        }),
+      ])
+      const filled = history.filter((count) => count > 0)
+      const historicalAverage = filled.length
+        ? Math.round(filled.reduce((sum, count) => sum + count, 0) / filled.length)
+        : 0
+      const explanation = await explainForecastWithSource({
+        date,
+        mealName: forecast.mealName,
+        predictedCount: forecast.predicted,
+        actualReservations,
+        historicalAverage,
+      })
+      return { ...forecast, ...explanation }
+    }),
+  )
 }

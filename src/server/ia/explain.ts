@@ -3,9 +3,9 @@ import { google } from '@ai-sdk/google'
 import { explanationSchema, type Explanation } from '@/lib/schemas/ia'
 
 // Surchargeable via GEMINI_MODEL sans toucher au code.
-const GEMINI_MODEL = process.env.GEMINI_MODEL ?? 'gemini-3.8-flash'
+const GEMINI_MODEL = process.env.GEMINI_MODEL ?? 'gemini-3.5-flash-lite'
 
-type ExplainInput = {
+export type ExplainInput = {
   date: Date
   mealName: string
   predictedCount: number
@@ -28,13 +28,22 @@ export function buildFallbackExplanation(input: ExplainInput): Explanation {
   const average = safeCount(input.historicalAverage)
   const prefix = 'Prévision de secours'
 
+  const reservations = `${reserved} réservation${reserved > 1 ? 's' : ''}`
+
   let result: Explanation
-  if (reserved > predicted) {
+  if (predicted === 0 && reserved === 0 && average === 0) {
+    result = {
+      alert: false,
+      level: 'info',
+      explanation: `${prefix} : Aucune demande prévue ni réservée pour ce plat, et aucun historique.`,
+      suggestedAction: 'Ne pas préparer ce plat pour ce service, sauf commande de dernière minute.',
+    }
+  } else if (reserved > predicted) {
     const missing = reserved - predicted
     result = {
       alert: true,
       level: 'danger',
-      explanation: `${prefix} : ${reserved} réservations confirmées pour ${predicted} portions prévues, la demande dépasse la prévision.`,
+      explanation: `${prefix} : ${reservations} confirmée${reserved > 1 ? 's' : ''} pour ${predicted} portions prévues, la demande dépasse la prévision.`,
       suggestedAction: `Produire ${missing} portions de plus pour couvrir toutes les réservations.`,
     }
   } else if (average > 0 && predicted > average * 1.25) {
@@ -42,7 +51,7 @@ export function buildFallbackExplanation(input: ExplainInput): Explanation {
     result = {
       alert: true,
       level: 'warn',
-      explanation: `${prefix} : ${predicted} portions prévues, soit ${gap} % au-dessus de la moyenne historique (${average}). ${reserved} déjà réservées.`,
+      explanation: `${prefix} : ${predicted} portions prévues, soit ${gap} % au-dessus de la moyenne historique (${average}). ${reservations} pour l’instant.`,
       suggestedAction: 'Produire par lots et suivre les réservations avant de lancer le reste.',
     }
   } else {
@@ -50,7 +59,7 @@ export function buildFallbackExplanation(input: ExplainInput): Explanation {
     result = {
       alert: false,
       level: 'info',
-      explanation: `${prefix} : ${reserved} réservations sur ${predicted} portions prévues (${share} %), en ligne avec la moyenne historique de ${average}.`,
+      explanation: `${prefix} : ${reservations} sur ${predicted} portions prévues (${share} %), moyenne historique de ${average}.`,
       suggestedAction: `Lancer la production prévue de ${predicted} portions.`,
     }
   }
@@ -62,11 +71,46 @@ export function buildFallbackExplanation(input: ExplainInput): Explanation {
   }
 }
 
+export type SourcedExplanation = Explanation & { source: 'gemini' | 'local' }
+
+// Évite de rappeler Gemini (quota gratuit limité) quand les chiffres n'ont pas changé.
+const CACHE_TTL_MS = 10 * 60 * 1000
+const explanationCache = new Map<string, { value: SourcedExplanation; expiresAt: number }>()
+
+export function clearExplanationCache(): void {
+  explanationCache.clear()
+}
+
+function cacheKey(input: ExplainInput): string {
+  return JSON.stringify([
+    GEMINI_MODEL,
+    input.mealName,
+    input.date.toISOString().slice(0, 10),
+    input.predictedCount,
+    input.actualReservations,
+    input.historicalAverage,
+  ])
+}
+
 export async function explainForecast(input: ExplainInput): Promise<Explanation> {
+  const { alert, level, explanation, suggestedAction } = await explainForecastWithSource(input)
+  return { alert, level, explanation, suggestedAction }
+}
+
+/** Explication + origine : `gemini` si le modèle a répondu à temps, `local` pour le repli calculé. */
+export async function explainForecastWithSource(input: ExplainInput): Promise<SourcedExplanation> {
   const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY
-  if (!apiKey || apiKey === 'dummy' || apiKey === '') {
-    return buildFallbackExplanation(input)
+  const noDemand =
+    safeCount(input.predictedCount) === 0 &&
+    safeCount(input.actualReservations) === 0 &&
+    safeCount(input.historicalAverage) === 0
+  if (!apiKey || apiKey === 'dummy' || apiKey === '' || noDemand) {
+    return { ...buildFallbackExplanation(input), source: 'local' }
   }
+
+  const key = cacheKey(input)
+  const cached = explanationCache.get(key)
+  if (cached && cached.expiresAt > Date.now()) return cached.value
 
   const abortController = new AbortController()
   const timeoutId = setTimeout(() => abortController.abort(), 5000)
@@ -77,7 +121,7 @@ export async function explainForecast(input: ExplainInput): Promise<Explanation>
     Réservations confirmées : ${input.actualReservations}.
     Moyenne historique : ${input.historicalAverage}.
     
-    Tu ne recalcules rien, tu expliques la prévision et tu alertes en français, en 2 phrases max.`
+    Tu ne recalcules rien, tu expliques la prévision et tu alertes en 2 phrases max, en français correct avec tous les accents.`
 
     const { object } = await generateObject({
       model: google(GEMINI_MODEL),
@@ -87,13 +131,15 @@ export async function explainForecast(input: ExplainInput): Promise<Explanation>
     })
 
     clearTimeout(timeoutId)
-    return object
+    const value: SourcedExplanation = { ...object, source: 'gemini' }
+    explanationCache.set(key, { value, expiresAt: Date.now() + CACHE_TTL_MS })
+    return value
   } catch (error) {
     clearTimeout(timeoutId)
     console.warn(
       '[ia] Gemini indisponible, repli utilisé :',
       error instanceof Error ? error.message : error,
     )
-    return buildFallbackExplanation(input)
+    return { ...buildFallbackExplanation(input), source: 'local' }
   }
 }
