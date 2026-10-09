@@ -43,6 +43,9 @@ type Forecast = {
   upper: number
   method: string
   explanation?: string
+  suggestedAction?: string
+  level?: 'info' | 'warn' | 'danger'
+  source?: 'gemini' | 'local'
 }
 type ForecastResponse = {
   forecasts: Forecast[]
@@ -568,14 +571,25 @@ export function KitchenDashboard() {
                   >
                     <div className="flex gap-3">
                       <span className="pt-1">
-                        {forecast.method === 'FALLBACK' ? (
-                          <AlertTriangle className="size-5 text-warn" />
+                        {forecast.level === 'danger' ? (
+                          <AlertTriangle className="size-5 text-danger" aria-label="Alerte" />
+                        ) : forecast.level === 'warn' || forecast.method === 'FALLBACK' ? (
+                          <AlertTriangle className="size-5 text-warn" aria-label="Vigilance" />
                         ) : (
-                          <Info className="size-5 text-glow" />
+                          <Info className="size-5 text-glow" aria-label="Information" />
                         )}
                       </span>
-                      <div>
-                        <h3 className="font-bold">{forecast.mealName ?? 'Repas'}</h3>
+                      <div className="min-w-0">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <h3 className="font-bold">{forecast.mealName ?? 'Repas'}</h3>
+                          {forecast.source ? (
+                            <span className="rounded-full border border-sage/30 px-2 py-0.5 text-[11px] font-bold text-sage">
+                              {forecast.source === 'gemini'
+                                ? 'Expliqué par Gemini'
+                                : 'Calcul local'}
+                            </span>
+                          ) : null}
+                        </div>
                         <p className="mt-1 text-sm text-sage">
                           Cible : {forecast.predicted} repas · fourchette {forecast.lower}–
                           {forecast.upper}
@@ -584,6 +598,11 @@ export function KitchenDashboard() {
                           {forecast.explanation ??
                             'Estimation générée à partir des données disponibles.'}
                         </p>
+                        {forecast.suggestedAction ? (
+                          <p className="mt-2 text-sm font-bold text-glow">
+                            → {forecast.suggestedAction}
+                          </p>
+                        ) : null}
                       </div>
                     </div>
                   </article>
