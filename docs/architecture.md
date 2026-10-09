@@ -3,39 +3,23 @@
 ## Schéma des couches
 Le flux de données suit une architecture stricte :
 `src/app/` (Pages & Composants) 
-  → `src/app/api/` (Handlers HTTP fins, parsing Zod) 
-  → `src/server/` (Services métiers, logique, IA) 
-  → `prisma/` (Base de données SQLite)
+  -> `src/app/api/` (Handlers HTTP fins, parsing Zod) 
+  -> `src/server/` (Services métiers, logique, IA) 
+  -> `prisma/` (Base de données SQLite)
 
-## Arborescence cible
-```
-crousflow/
-├── .opencode/            agents/, rules/, commands/, hooks/, skills/, ownership.json
-├── .github/workflows/    ci.yml
-├── .husky/               pre-commit, pre-push
-├── docs/                 adr/, reviews/, tasks/, PITCH.md, DEMO.md, architecture.md
-├── prisma/               schema.prisma, seed.ts, migrations/
-├── prisma.config.ts
-├── scripts/              check-boundaries.ts, demo-reset.ts
-├── src/
-│   ├── app/              (routes frontend et api)
-│   ├── components/       ui/ et features/
-│   ├── config/           rules.ts, env.ts
-│   ├── lib/              schemas/, ui/, hooks/
-│   └── server/           services métier (reservations, kitchen, ia, etc.)
-├── tests/                unitaires, intégration, e2e, chaos, data
-└── screenshots/
-```
-
-## Pipeline d'orchestration
-Le flux de développement est orchestré par l'agent `main` suivant :
-1. `architect` → produit les plans et contrats (Zod, erreurs, routes).
-2. `backend` / `data` / `ia` → développent en parallèle une fois les contrats mergés.
-3. `frontend` → interface branchée sur les contrats.
-4. `qa` + `chaos` → tests automatiques et scénarios de robustesse.
-5. `ui-reviewer` + `security` → audits et verdicts.
-6. `devops` → validation finale CI.
-7. `docs` → mise à jour de la présentation.
+## Les 12 Agents (Harness)
+1. `main` : Orchestrateur central.
+2. `architect` : Décisions d'architecture, conception des contrats.
+3. `data` : Modélisation et accès base de données.
+4. `backend` : Logique métier (réservations, tickets).
+5. `ia` : Couche de prévision et analyse avec Gemini.
+6. `frontend` : Composants UI, pages, intégration.
+7. `ui-reviewer` : Audit du respect strict de DESIGN.md et de l'accessibilité.
+8. `security` : Audit de la robustesse, rate limits, anti-IDOR.
+9. `qa` : Tests Playwright, couverture Vitest.
+10. `chaos` : Scénarios d'anomalies (C-01 à C-24).
+11. `devops` : Intégration continue, lint, build.
+12. `docs` : Documentation, Pitch, Démo.
 
 ## Portes de Qualité (Gates)
 - **G1** : Plan et périmètre validés.
@@ -43,3 +27,19 @@ Le flux de développement est orchestré par l'agent `main` suivant :
 - **G3** : `pnpm check` vert (lint, typecheck, test, build).
 - **G4** : Verdicts UI et Sécurité sans bloqueur.
 - **G5** : Démo prête (E2E verts, seed rejouable).
+
+## Routes API Finales
+- `POST /api/auth/demo`
+- `GET /api/health`
+- `POST /api/reservations`
+- `DELETE /api/reservations/[id]`
+- `GET /api/me/reservations`
+- `POST /api/tickets/validate`
+- `GET /api/slots`
+- `GET /api/menu`
+- `GET /api/kitchen/forecast`
+- `GET /api/kitchen/batches`
+- `PATCH /api/kitchen/batches`
+- `GET /api/admin/stats`
+- `GET /api/admin/export`
+- `POST /api/admin/chaos/run`
