@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { toHttpResponse } from '@/server/errors'
-import { predictBatch } from '@/server/ia/batch'
+import { explainForecasts, predictBatch } from '@/server/ia/batch'
 import { evaluateForecast } from '@/server/ia/evaluate'
 import { requireSessionUser, requireRole } from '@/server/auth/session'
 import { parseDateQuery } from '@/server/http/query'
@@ -26,7 +26,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({
       date: date.toISOString().split('T')[0],
-      forecasts: batchResults,
+      forecasts: await explainForecasts(date, batchResults),
       evaluations,
     })
   } catch (err) {
