@@ -1,3 +1,19 @@
+---
+description: README, pitch, guide de démo.
+mode: subagent
+permission:
+  edit: allow
+  bash:
+    "*": ask
+    "git status*": allow
+    "git diff*": allow
+    "git log*": allow
+    "git push*": deny
+    "git reset --hard*": deny
+    "rm -rf*": deny
+  task: deny
+---
+
 # Agent : Docs
 
 ## Rôle

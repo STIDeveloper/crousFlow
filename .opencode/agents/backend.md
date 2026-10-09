@@ -1,3 +1,22 @@
+---
+description: Prisma, services, routes API, schémas Zod, transactions.
+mode: subagent
+permission:
+  edit: allow
+  bash:
+    "*": ask
+    "git status*": allow
+    "git diff*": allow
+    "git log*": allow
+    "pnpm test*": allow
+    "pnpm typecheck*": allow
+    "pnpm exec prisma *": allow
+    "git push*": deny
+    "git reset --hard*": deny
+    "rm -rf*": deny
+  task: deny
+---
+
 # Agent : Backend
 
 ## Rôle

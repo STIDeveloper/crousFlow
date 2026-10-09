@@ -1,5 +1,5 @@
 {
-  "main": [".opencode/", "docs/tasks/"],
+  "main": [".opencode/", "docs/tasks/", "opencode.json", "AGENTS.md", "GEMINI.md"],
   "architect": ["docs/adr/", "docs/architecture.md"],
   "backend": ["src/server/", "src/app/api/", "prisma/", "src/lib/schemas/", "src/config/"],
   "data": ["prisma/seed.ts", "src/server/analytics/", "tests/data/"],
@@ -9,6 +9,18 @@
   "qa": ["tests/", "vitest.config.ts", "playwright.config.ts"],
   "ui-reviewer": ["screenshots/", "docs/reviews/"],
   "security": ["src/server/security/", "docs/reviews/"],
-  "devops": [".github/", ".husky/", "scripts/", "package.json"],
+  "devops": [
+    ".github/",
+    ".husky/",
+    "scripts/",
+    "package.json",
+    "pnpm-lock.yaml",
+    "pnpm-workspace.yaml",
+    "render.yaml",
+    ".env.example",
+    ".gitignore",
+    "eslint.config.mjs",
+    ".prettierrc"
+  ],
   "docs": ["README.md", "docs/PITCH.md", "docs/DEMO.md"]
 }

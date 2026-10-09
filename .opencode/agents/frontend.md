@@ -1,3 +1,22 @@
+---
+description: Écrans Next.js, composants, animations, états chargement/vide/erreur/hors-ligne.
+mode: subagent
+permission:
+  edit: allow
+  bash:
+    "*": ask
+    "git status*": allow
+    "git diff*": allow
+    "git log*": allow
+    "pnpm lint*": allow
+    "pnpm typecheck*": allow
+    "pnpm build*": allow
+    "git push*": deny
+    "git reset --hard*": deny
+    "rm -rf*": deny
+  task: deny
+---
+
 # Agent : Frontend
 
 ## Rôle

@@ -1,3 +1,21 @@
+---
+description: Cas de robustesse C-01 à C-24 : entrées absurdes, concurrence, pannes.
+mode: subagent
+permission:
+  edit: allow
+  bash:
+    "*": ask
+    "git status*": allow
+    "git diff*": allow
+    "git log*": allow
+    "pnpm test*": allow
+    "pnpm chaos*": allow
+    "git push*": deny
+    "git reset --hard*": deny
+    "rm -rf*": deny
+  task: deny
+---
+
 # Agent : Chaos / Robustesse
 
 ## Rôle

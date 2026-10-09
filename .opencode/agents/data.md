@@ -1,3 +1,21 @@
+---
+description: Seed déterministe, historique fictif, analytique.
+mode: subagent
+permission:
+  edit: allow
+  bash:
+    "*": ask
+    "git status*": allow
+    "git diff*": allow
+    "git log*": allow
+    "pnpm seed*": allow
+    "pnpm test*": allow
+    "git push*": deny
+    "git reset --hard*": deny
+    "rm -rf*": deny
+  task: deny
+---
+
 # Agent : Data
 
 ## Rôle
