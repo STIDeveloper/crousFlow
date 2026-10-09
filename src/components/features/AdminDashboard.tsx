@@ -78,10 +78,10 @@ export function AdminDashboard() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* CHART 1: Réservations */}
-        <div className="bg-night-2 p-6 rounded-2xl border border-sage/20">
+        <div className="bg-night-2 p-6 rounded-2xl border border-sage/20 min-w-0">
           <h2 className="text-xl font-bold mb-6">Évolution des réservations</h2>
-          <div className="h-[250px] w-full">
-            <ResponsiveContainer width="100%" height="100%">
+          <div className="h-[300px] w-full min-h-[300px] min-w-0">
+            <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
               <ComposedChart
                 data={stats?.chartData || []}
                 margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
@@ -123,10 +123,10 @@ export function AdminDashboard() {
         </div>
 
         {/* CHART 2: Simulate No Shows (Bar chart) */}
-        <div className="bg-night-2 p-6 rounded-2xl border border-sage/20">
+        <div className="bg-night-2 p-6 rounded-2xl border border-sage/20 min-w-0">
           <h2 className="text-xl font-bold mb-6">No-Shows par jour (simulé)</h2>
-          <div className="h-[250px] w-full">
-            <ResponsiveContainer width="100%" height="100%">
+          <div className="h-[300px] w-full min-h-[300px] min-w-0">
+            <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
               <ComposedChart
                 data={stats?.chartData || []}
                 margin={{ top: 10, right: 10, left: -20, bottom: 0 }}

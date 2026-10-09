@@ -297,8 +297,8 @@ export function KitchenDashboard() {
                 {forecastData?.forecasts?.[0]?.method === 'FALLBACK' ? 'Secours' : 'Méthode STAT'}
               </span>
             </div>
-            <div className="h-[200px] w-full">
-              <ResponsiveContainer width="100%" height="100%">
+            <div className="h-[300px] w-full min-h-[300px] min-w-0">
+              <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
                 <ComposedChart
                   data={chartData}
                   margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
