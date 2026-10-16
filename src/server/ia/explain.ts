@@ -3,7 +3,7 @@ import { google } from '@ai-sdk/google'
 import { explanationSchema, type Explanation } from '@/lib/schemas/ia'
 
 // Surchargeable via GEMINI_MODEL sans toucher au code.
-const GEMINI_MODEL = process.env.GEMINI_MODEL ?? 'gemini-3.5-flash-lite'
+const GEMINI_MODEL = process.env.GEMINI_MODEL ?? 'gemini-2.5-flash-lite'
 
 export type ExplainInput = {
   date: Date
@@ -116,7 +116,13 @@ export async function explainForecastWithSource(input: ExplainInput): Promise<So
   const timeoutId = setTimeout(() => abortController.abort(), 5000)
 
   try {
-    const prompt = `Tu es un assistant cuisine. On te donne des chiffres déjà calculés pour le plat "${input.mealName.slice(0, 120)}" le ${input.date.toISOString().split('T')[0]}.
+    const serviceDay = input.date.toLocaleDateString('fr-FR', {
+      weekday: 'long',
+      day: 'numeric',
+      month: 'long',
+      timeZone: 'UTC',
+    })
+    const prompt = `Tu es un assistant cuisine. On te donne des chiffres déjà calculés pour le plat "${input.mealName.slice(0, 120)}" du service du ${serviceDay}.
     Prévision du modèle : ${input.predictedCount} portions.
     Réservations confirmées : ${input.actualReservations}.
     Moyenne historique : ${input.historicalAverage}.
