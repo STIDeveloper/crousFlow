@@ -49,7 +49,8 @@ describe('Reservations API', () => {
         allergens: '[]',
       },
     })
-    const date = new Date(Date.now() + 86400000)
+    // J+3 : reste dans la fenêtre d’annulation (veille 18 h UTC) quelle que soit l’heure du test.
+    const date = new Date(Date.now() + 3 * 86_400_000)
     const menuItem = await db.menuItem.create({
       data: { id: 'mi1', mealId: meal.id, date, available: true },
     })
