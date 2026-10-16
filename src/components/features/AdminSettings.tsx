@@ -92,39 +92,39 @@ export function AdminSettings() {
 
   return (
     <div className="mx-auto flex max-w-4xl flex-col gap-6">
-      <header className="flex flex-col gap-4 rounded-2xl border border-sage/20 bg-night-2 p-5 sm:flex-row sm:items-end sm:justify-between sm:p-7">
+      <header className="flex flex-col gap-4 rounded-2xl border border-mist/20 bg-deep-2 p-5 sm:flex-row sm:items-end sm:justify-between sm:p-7">
         <div>
-          <p className="text-xs font-bold uppercase tracking-[.18em] text-glow">
+          <p className="text-xs font-bold uppercase tracking-[.18em] text-highlight">
             Paramètres Cafétéria
           </p>
           <h1 className="mt-2 font-display text-4xl font-bold sm:text-5xl">Configuration Métier</h1>
-          <p className="mt-2 text-sage">
+          <p className="mt-2 text-mist">
             Modifiez les tarifs, fenêtres horaires et quotas appliqués en temps réel sans
             redémarrage.
           </p>
         </div>
-        <div className="flex items-center gap-2 rounded-xl bg-night p-3 border border-sage/20 text-sm text-sage">
-          <Settings className="size-5 text-glow" />
+        <div className="flex items-center gap-2 rounded-xl bg-deep p-3 border border-mist/20 text-sm text-mist">
+          <Settings className="size-5 text-highlight" />
           <span>Règles locales actives</span>
         </div>
       </header>
 
       {isLoading ? (
-        <div className="flex min-h-72 items-center justify-center rounded-2xl border border-sage/20 bg-night-2 p-12">
-          <Loader2 className="size-8 animate-spin text-glow motion-reduce:animate-none" />
+        <div className="flex min-h-72 items-center justify-center rounded-2xl border border-mist/20 bg-deep-2 p-12">
+          <Loader2 className="size-8 animate-spin text-highlight motion-reduce:animate-none" />
         </div>
       ) : (
         <form onSubmit={handleSubmit} className="flex flex-col gap-6">
           {/* Bloc Tarification */}
-          <section className="rounded-2xl border border-sage/20 bg-night-2 p-6">
+          <section className="rounded-2xl border border-mist/20 bg-deep-2 p-6">
             <div className="flex items-center gap-2 mb-4">
-              <Coins className="size-5 text-glow" />
-              <h2 className="font-display text-xl font-bold text-paper">
+              <Coins className="size-5 text-highlight" />
+              <h2 className="font-display text-xl font-bold text-surface">
                 Tarification des Formules
               </h2>
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
-              <label className="grid gap-1.5 text-sm font-bold text-sage">
+              <label className="grid gap-1.5 text-sm font-bold text-mist">
                 <span>Tarif formule sociale CROUS (compte Izly actif)</span>
                 <div className="flex items-center gap-2">
                   <input
@@ -138,17 +138,17 @@ export function AdminSettings() {
                         socialMealPriceCents: Math.round(Number(e.target.value) * 100),
                       })
                     }
-                    className="min-h-11 w-full rounded-xl border border-sage/40 bg-night px-3 font-mono text-paper focus:ring-2 focus:ring-glow"
+                    className="min-h-11 w-full rounded-xl border border-mist/40 bg-deep px-3 font-mono text-surface focus:ring-2 focus:ring-highlight"
                   />
-                  <span className="font-bold text-paper">€</span>
+                  <span className="font-bold text-surface">€</span>
                 </div>
-                <span className="text-xs font-normal text-sage/80">
+                <span className="text-xs font-normal text-mist/80">
                   Référence CROUS : 1,00 € pour les étudiants bénéficiant d&apos;un compte Izly
                   actif.
                 </span>
               </label>
 
-              <label className="grid gap-1.5 text-sm font-bold text-sage">
+              <label className="grid gap-1.5 text-sm font-bold text-mist">
                 <span>Tarif repas général (hors compte Izly / visiteurs)</span>
                 <div className="flex items-center gap-2">
                   <input
@@ -162,11 +162,11 @@ export function AdminSettings() {
                         nonScholarPriceCents: Math.round(Number(e.target.value) * 100),
                       })
                     }
-                    className="min-h-11 w-full rounded-xl border border-sage/40 bg-night px-3 font-mono text-paper focus:ring-2 focus:ring-glow"
+                    className="min-h-11 w-full rounded-xl border border-mist/40 bg-deep px-3 font-mono text-surface focus:ring-2 focus:ring-highlight"
                   />
-                  <span className="font-bold text-paper">€</span>
+                  <span className="font-bold text-surface">€</span>
                 </div>
-                <span className="text-xs font-normal text-sage/80">
+                <span className="text-xs font-normal text-mist/80">
                   Tarif standard conventionné CROUS (ex: 3,30 €).
                 </span>
               </label>
@@ -174,15 +174,15 @@ export function AdminSettings() {
           </section>
 
           {/* Bloc Horaires et Clôture */}
-          <section className="rounded-2xl border border-sage/20 bg-night-2 p-6">
+          <section className="rounded-2xl border border-mist/20 bg-deep-2 p-6">
             <div className="flex items-center gap-2 mb-4">
-              <Clock className="size-5 text-glow" />
-              <h2 className="font-display text-xl font-bold text-paper">
+              <Clock className="size-5 text-highlight" />
+              <h2 className="font-display text-xl font-bold text-surface">
                 Fenêtres de Réservation & Annulation
               </h2>
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
-              <label className="grid gap-1.5 text-sm font-bold text-sage">
+              <label className="grid gap-1.5 text-sm font-bold text-mist">
                 <span>Heure limite de réservation le jour du service</span>
                 <input
                   type="time"
@@ -190,14 +190,14 @@ export function AdminSettings() {
                   onChange={(e) =>
                     setFormData({ ...currentValues, bookingClosingHour: e.target.value })
                   }
-                  className="min-h-11 w-full rounded-xl border border-sage/40 bg-night px-3 font-mono text-paper focus:ring-2 focus:ring-glow"
+                  className="min-h-11 w-full rounded-xl border border-mist/40 bg-deep px-3 font-mono text-surface focus:ring-2 focus:ring-highlight"
                 />
-                <span className="text-xs font-normal text-sage/80">
+                <span className="text-xs font-normal text-mist/80">
                   Exemple : 11:00 pour le service du midi.
                 </span>
               </label>
 
-              <label className="grid gap-1.5 text-sm font-bold text-sage">
+              <label className="grid gap-1.5 text-sm font-bold text-mist">
                 <span>Heure limite d&apos;annulation sans pénalité</span>
                 <input
                   type="time"
@@ -205,9 +205,9 @@ export function AdminSettings() {
                   onChange={(e) =>
                     setFormData({ ...currentValues, cancellationClosingHour: e.target.value })
                   }
-                  className="min-h-11 w-full rounded-xl border border-sage/40 bg-night px-3 font-mono text-paper focus:ring-2 focus:ring-glow"
+                  className="min-h-11 w-full rounded-xl border border-mist/40 bg-deep px-3 font-mono text-surface focus:ring-2 focus:ring-highlight"
                 />
-                <span className="text-xs font-normal text-sage/80">
+                <span className="text-xs font-normal text-mist/80">
                   Permet de libérer les portions pour les autres étudiants.
                 </span>
               </label>
@@ -215,15 +215,15 @@ export function AdminSettings() {
           </section>
 
           {/* Bloc Quotas et Composition */}
-          <section className="rounded-2xl border border-sage/20 bg-night-2 p-6">
+          <section className="rounded-2xl border border-mist/20 bg-deep-2 p-6">
             <div className="flex items-center gap-2 mb-4">
-              <Sliders className="size-5 text-glow" />
-              <h2 className="font-display text-xl font-bold text-paper">
+              <Sliders className="size-5 text-highlight" />
+              <h2 className="font-display text-xl font-bold text-surface">
                 Composition de Formule & Quotas
               </h2>
             </div>
             <div className="grid gap-4 sm:grid-cols-3">
-              <label className="grid gap-1.5 text-sm font-bold text-sage">
+              <label className="grid gap-1.5 text-sm font-bold text-mist">
                 <span>Périphériques max inclus</span>
                 <input
                   type="number"
@@ -233,14 +233,14 @@ export function AdminSettings() {
                   onChange={(e) =>
                     setFormData({ ...currentValues, maxPeripherals: Number(e.target.value) })
                   }
-                  className="min-h-11 w-full rounded-xl border border-sage/40 bg-night px-3 font-mono text-paper focus:ring-2 focus:ring-glow"
+                  className="min-h-11 w-full rounded-xl border border-mist/40 bg-deep px-3 font-mono text-surface focus:ring-2 focus:ring-highlight"
                 />
-                <span className="text-xs font-normal text-sage/80">
+                <span className="text-xs font-normal text-mist/80">
                   1 Plat + jusqu&apos;à 2 périphériques (entrée/dessert).
                 </span>
               </label>
 
-              <label className="grid gap-1.5 text-sm font-bold text-sage">
+              <label className="grid gap-1.5 text-sm font-bold text-mist">
                 <span>Réservations max / jour / étudiant</span>
                 <input
                   type="number"
@@ -250,14 +250,14 @@ export function AdminSettings() {
                   onChange={(e) =>
                     setFormData({ ...currentValues, maxPerDay: Number(e.target.value) })
                   }
-                  className="min-h-11 w-full rounded-xl border border-sage/40 bg-night px-3 font-mono text-paper focus:ring-2 focus:ring-glow"
+                  className="min-h-11 w-full rounded-xl border border-mist/40 bg-deep px-3 font-mono text-surface focus:ring-2 focus:ring-highlight"
                 />
-                <span className="text-xs font-normal text-sage/80">
+                <span className="text-xs font-normal text-mist/80">
                   1 repas social par service maximum.
                 </span>
               </label>
 
-              <label className="grid gap-1.5 text-sm font-bold text-sage">
+              <label className="grid gap-1.5 text-sm font-bold text-mist">
                 <span>Réservations max / semaine</span>
                 <input
                   type="number"
@@ -267,9 +267,9 @@ export function AdminSettings() {
                   onChange={(e) =>
                     setFormData({ ...currentValues, maxPerWeek: Number(e.target.value) })
                   }
-                  className="min-h-11 w-full rounded-xl border border-sage/40 bg-night px-3 font-mono text-paper focus:ring-2 focus:ring-glow"
+                  className="min-h-11 w-full rounded-xl border border-mist/40 bg-deep px-3 font-mono text-surface focus:ring-2 focus:ring-highlight"
                 />
-                <span className="text-xs font-normal text-sage/80">
+                <span className="text-xs font-normal text-mist/80">
                   Plafond hebdomadaire étudiant.
                 </span>
               </label>
@@ -280,14 +280,14 @@ export function AdminSettings() {
             <button
               type="button"
               onClick={() => void refetch()}
-              className="inline-flex min-h-12 items-center gap-2 rounded-full border border-sage/40 px-5 font-bold text-sage hover:bg-sage/10 transition-colors"
+              className="inline-flex min-h-12 items-center gap-2 rounded-full border border-mist/40 px-5 font-bold text-mist hover:bg-mist/10 transition-colors"
             >
               <RefreshCw className="size-4" /> Réinitialiser
             </button>
             <button
               type="submit"
               disabled={mutation.isPending}
-              className="inline-flex min-h-12 items-center gap-2 rounded-full bg-glow px-6 font-bold text-night hover:bg-glow/90 disabled:opacity-50 transition-colors"
+              className="inline-flex min-h-12 items-center gap-2 rounded-full bg-highlight px-6 font-bold text-deep hover:bg-highlight/90 disabled:opacity-50 transition-colors"
             >
               {mutation.isPending ? (
                 <Loader2 className="size-5 animate-spin motion-reduce:animate-none" />

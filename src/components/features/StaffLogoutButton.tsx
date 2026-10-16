@@ -31,10 +31,10 @@ export function StaffLogoutButton() {
       type="button"
       onClick={() => void logout()}
       disabled={isPending}
-      className="inline-flex min-h-11 items-center gap-2 text-sm font-bold text-sage transition-colors hover:text-paper focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-glow disabled:cursor-not-allowed disabled:opacity-60"
+      className="inline-flex min-h-11 shrink-0 items-center gap-2 rounded-full px-3 text-sm font-bold text-mist transition-colors hover:bg-deep-2 hover:text-surface focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-highlight disabled:cursor-not-allowed disabled:opacity-60"
     >
       <LogOut className="size-4" aria-hidden="true" />
-      <span>{isPending ? 'Déconnexion…' : 'Déconnexion'}</span>
+      <span className="sr-only sm:not-sr-only">{isPending ? 'Déconnexion…' : 'Déconnexion'}</span>
     </button>
   )
 }

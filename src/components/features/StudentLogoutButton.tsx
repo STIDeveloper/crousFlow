@@ -31,10 +31,12 @@ export function StudentLogoutButton() {
       type="button"
       onClick={() => void logout()}
       disabled={isPending}
-      className="inline-flex min-h-11 items-center gap-2 rounded-full px-3 text-sm font-semibold text-forest transition-colors hover:bg-sage/40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-forest disabled:opacity-60"
+      className="inline-flex min-h-11 min-w-11 items-center justify-center gap-2 rounded-full px-3 text-sm font-bold text-ink-soft transition-colors hover:bg-brand-soft hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-60"
     >
       <LogOut className="h-4 w-4" aria-hidden="true" />
-      <span>{isPending ? 'Déconnexion…' : 'Se déconnecter'}</span>
+      <span className="sr-only sm:not-sr-only">
+        {isPending ? 'Déconnexion…' : 'Se déconnecter'}
+      </span>
     </button>
   )
 }

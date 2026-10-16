@@ -1,7 +1,7 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import { X } from 'lucide-react'
+import { Check, Clock, X } from 'lucide-react'
 import { useState } from 'react'
 import { SlotGauge } from './SlotGauge'
 import { cn } from '@/lib/utils'
@@ -171,52 +171,73 @@ export function MealCard({
     setPeripheralIds((current) => [...current.filter((id) => !groupIds.has(id)), option.id])
   }
 
+  const vegetarian = menuItem.meal.category === 'Végétarien'
+  const optionClass =
+    'flex min-h-12 cursor-pointer items-center gap-3 rounded-2xl border border-line bg-surface px-4 py-2.5 transition-colors hover:border-brand has-[:checked]:border-primary has-[:checked]:bg-brand-soft/70'
+
   return (
     <>
       <motion.article
         layoutId={`meal-${menuItem.id}-${slot.id}`}
         className={cn(
-          'food-card group flex w-full flex-col overflow-hidden rounded-[2rem] border border-forest/10 bg-[#fffdf7] text-left transition-all',
-          !disabled && 'hover:border-forest hover:shadow-md',
-          isReserved && 'border-forest bg-sage/10 ring-2 ring-forest ring-offset-1',
+          'food-card group flex w-full flex-col overflow-hidden rounded-[1.75rem] border border-line/70 bg-surface text-left',
+          isReserved && 'ring-2 ring-brand ring-offset-2 ring-offset-canvas',
         )}
       >
-        <div
-          className="meal-art relative h-48 w-full"
-          style={{ background: menuItem.meal.category === 'Végétarien' ? '#dae6b9' : '#f8c467' }}
-        >
-          <MealArtwork vegetarian={menuItem.meal.category === 'Végétarien'} />
-          <span className="absolute left-4 top-4 rounded-full bg-[#fffdf7] px-3 py-1.5 text-xs font-bold text-forest">
-            {menuItem.meal.category}
-          </span>
-          <span className="absolute bottom-3 right-4 text-[10px] font-semibold text-ink/70">
-            Illustration du plat
+        <div className="relative">
+          <div
+            className={cn(
+              'relative h-44 w-full overflow-hidden',
+              vegetarian ? 'bg-leaf/20' : 'bg-brand-soft',
+            )}
+          >
+            <div
+              aria-hidden="true"
+              className="ripple absolute -left-24 -top-24 size-80 rounded-full opacity-80"
+            />
+            <MealArtwork vegetarian={vegetarian} />
+            <span className="absolute left-4 top-4 rounded-full bg-surface/95 px-3 py-1.5 text-xs font-bold text-ink shadow-sm">
+              {menuItem.meal.category}
+            </span>
+            {isReserved ? (
+              <span className="absolute right-4 top-4 inline-flex items-center gap-1 rounded-full bg-leaf px-3 py-1.5 text-xs font-extrabold text-ink shadow-sm">
+                <Check className="size-3.5" aria-hidden="true" strokeWidth={3} />
+                Réservé
+              </span>
+            ) : null}
+            <span className="absolute bottom-2.5 left-4 text-[10px] font-semibold text-ink/60">
+              Illustration du plat
+            </span>
+          </div>
+          <span className="absolute bottom-0 right-5 grid size-16 translate-y-1/2 place-items-center rounded-full bg-surface text-center shadow-card ring-4 ring-surface">
+            <span className="font-display text-base font-extrabold leading-none text-primary">
+              {formatPrice(socialMealPriceCents)}
+            </span>
           </span>
         </div>
-        <div className="flex flex-1 flex-col p-5">
-          <div className="mb-3 flex w-full items-start justify-between gap-2">
-            <span className="rounded-md bg-sage/30 px-2 py-0.5 text-xs font-bold">
-              {slot.startTime}
-            </span>
-            <div className="flex flex-col items-end text-right">
-              <span className="text-xs font-bold text-forest">
-                Formule sociale {formatPrice(socialMealPriceCents)}
-              </span>
-              <span className="text-[11px] font-medium text-forest/80">
-                Formule CROUS avec compte Izly · 1 plat + entrée + dessert
-              </span>
-            </div>
-          </div>
-          <h3 className="mb-2 font-display text-2xl font-bold leading-tight">
+        <div className="flex flex-1 flex-col p-5 pt-6">
+          <span className="mb-3 inline-flex w-fit items-center gap-1.5 rounded-full bg-brand-soft px-2.5 py-1 text-xs font-bold text-ink">
+            <Clock className="size-3.5 text-primary" aria-hidden="true" />
+            Retrait {slot.startTime}
+          </span>
+          <h3 className="mb-2 font-display text-[1.4rem] font-extrabold leading-tight text-ink">
             {menuItem.meal.name}
           </h3>
-          <p className="mb-4 min-h-10 text-sm leading-relaxed text-ink/75">
+          <p className="mb-4 min-h-10 text-sm leading-relaxed text-ink-soft">
             {menuItem.meal.description && !menuItem.meal.description.includes('délicieux')
               ? menuItem.meal.description
               : 'Plat proposé par votre restaurant universitaire.'}
           </p>
+          <p className="mb-4 flex flex-col rounded-2xl bg-canvas px-3.5 py-2.5">
+            <span className="text-xs font-bold text-primary">
+              Formule sociale {formatPrice(socialMealPriceCents)}
+            </span>
+            <span className="text-[11px] font-medium text-ink-soft">
+              Formule CROUS avec compte Izly · 1 plat + entrée + dessert
+            </span>
+          </p>
           {menuItem.meal.allergens.length > 0 ? (
-            <p className="mb-4 w-fit rounded-full bg-paper px-3 py-1 text-[11px] text-ink/70">
+            <p className="mb-4 w-fit rounded-full border border-line bg-canvas px-3 py-1 text-[11px] font-medium text-ink-soft">
               Allergènes : {menuItem.meal.allergens.join(', ')}
             </p>
           ) : null}
@@ -224,7 +245,7 @@ export function MealCard({
             <span className="mb-2 text-xs font-bold text-danger">Complet</span>
           ) : null}
           {isReserved ? (
-            <span className="mb-2 text-xs font-bold text-forest">Réservé sur ce créneau</span>
+            <span className="mb-2 text-xs font-bold text-ok">Réservé sur ce créneau</span>
           ) : null}
           <div className="mt-auto w-full">
             <SlotGauge capacity={slot.capacity} reservedCount={slot.reservedCount} />
@@ -235,10 +256,15 @@ export function MealCard({
             disabled={disabled || mutation.isPending}
             aria-label={actionLabel}
             className={cn(
-              'mt-4 inline-flex min-h-12 items-center justify-center rounded-full px-3 text-sm font-bold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-forest',
-              disabled ? 'cursor-not-allowed bg-sage/30 text-forest' : 'bg-tomato text-paper',
+              'mt-4 inline-flex min-h-12 items-center justify-center gap-2 rounded-full px-4 text-sm font-extrabold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary',
+              isReserved
+                ? 'cursor-default bg-leaf/25 text-ok'
+                : disabled
+                  ? 'cursor-not-allowed bg-mist text-ink-soft'
+                  : 'bg-primary text-primary-foreground shadow-sm hover:bg-brand-deep',
             )}
           >
+            {isReserved ? <Check className="size-4" aria-hidden="true" strokeWidth={3} /> : null}
             {!canReserve
               ? 'Connexion étudiante requise pour réserver'
               : mutation.isPending
@@ -256,187 +282,198 @@ export function MealCard({
 
       {isComposerOpen ? (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-night/60 p-4"
+          className="fixed inset-0 z-[60] flex items-end justify-center bg-deep/60 p-0 backdrop-blur-sm sm:items-center sm:p-4"
           role="presentation"
           onMouseDown={(event) => {
             if (event.target === event.currentTarget) setComposerOpen(false)
+          }}
+          onKeyDown={(event) => {
+            if (event.key === 'Escape') setComposerOpen(false)
           }}
         >
           <section
             role="dialog"
             aria-modal="true"
             aria-labelledby={`composer-title-${menuItem.id}`}
-            className="max-h-[90vh] w-full max-w-xl overflow-y-auto rounded-[2rem] bg-paper p-6 shadow-xl sm:p-8"
+            className="max-h-[92vh] w-full max-w-xl overflow-y-auto rounded-t-[2rem] bg-surface shadow-float sm:rounded-[2rem]"
           >
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <p className="text-xs font-bold uppercase tracking-[.16em] text-forest">
-                  Formule sociale
-                </p>
-                <h2
-                  id={`composer-title-${menuItem.id}`}
-                  className="font-display text-3xl font-bold"
+            <div className="sky-gradient relative overflow-hidden px-6 pb-6 pt-6 sm:px-8">
+              <div
+                aria-hidden="true"
+                className="ripple pointer-events-none absolute -right-28 -top-28 size-72 rounded-full"
+              />
+              <div className="relative flex items-start justify-between gap-4">
+                <div>
+                  <p className="visual-kicker text-ink/80">Formule sociale</p>
+                  <h2
+                    id={`composer-title-${menuItem.id}`}
+                    className="mt-1 font-display text-3xl font-extrabold text-ink"
+                  >
+                    Composer votre repas
+                  </h2>
+                </div>
+                <button
+                  type="button"
+                  autoFocus
+                  onClick={() => setComposerOpen(false)}
+                  className="grid min-h-11 min-w-11 place-items-center rounded-full bg-surface/90 text-ink shadow-sm hover:bg-surface"
+                  aria-label="Fermer"
                 >
-                  Composer votre repas
-                </h2>
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+              <p className="relative mt-3 text-sm font-medium text-ink/85">
+                Plateau CROUS standard : {menuItem.meal.name} + entrée + dessert (
+                {formatPrice(socialMealPriceCents)} avec compte Izly actif). Les éventuels
+                suppléments s’ajoutent et seront réglés sur le TPE Izly lors du retrait.
+              </p>
+            </div>
+
+            <div className="px-6 pb-6 sm:px-8 sm:pb-8">
+              {starterOptions.length > 0 ? (
+                <fieldset className="mt-6">
+                  <legend className="font-bold text-ink">
+                    Entrée <span className="text-sm font-semibold text-primary">(obligatoire)</span>
+                  </legend>
+                  <div className="mt-3 grid gap-2">
+                    {starterOptions.map((option) => {
+                      const selected = peripheralIds.includes(option.id)
+                      return (
+                        <label key={option.id} className={optionClass}>
+                          <input
+                            type="radio"
+                            className="size-4 accent-primary"
+                            name={`starter-${menuItem.id}-${slot.id}`}
+                            checked={selected}
+                            onChange={() => selectPeripheral(option, starterOptions)}
+                          />
+                          <span className="font-medium">
+                            {option.meal.name}{' '}
+                            <span className="text-xs text-ink-soft">· incluse</span>
+                          </span>
+                        </label>
+                      )
+                    })}
+                  </div>
+                </fieldset>
+              ) : null}
+
+              {dessertOptions.length > 0 ? (
+                <fieldset className="mt-6">
+                  <legend className="font-bold text-ink">
+                    Dessert{' '}
+                    <span className="text-sm font-semibold text-primary">(obligatoire)</span>
+                  </legend>
+                  <div className="mt-3 grid gap-2">
+                    {dessertOptions.map((option) => {
+                      const selected = peripheralIds.includes(option.id)
+                      return (
+                        <label key={option.id} className={optionClass}>
+                          <input
+                            type="radio"
+                            className="size-4 accent-primary"
+                            name={`dessert-${menuItem.id}-${slot.id}`}
+                            checked={selected}
+                            onChange={() => selectPeripheral(option, dessertOptions)}
+                          />
+                          <span className="font-medium">
+                            {option.meal.name}{' '}
+                            <span className="text-xs text-ink-soft">· inclus</span>
+                          </span>
+                        </label>
+                      )
+                    })}
+                  </div>
+                </fieldset>
+              ) : null}
+
+              {otherPeripheralOptions.length > 0 && !hasRequiredComposition ? (
+                <fieldset className="mt-6">
+                  <legend className="font-bold text-ink">Périphériques (2 choix maximum)</legend>
+                  <div className="mt-3 grid gap-2">
+                    {otherPeripheralOptions.map((option) => {
+                      const selected = peripheralIds.includes(option.id)
+                      const disabledOption = !selected && peripheralIds.length >= 2
+                      return (
+                        <label
+                          key={option.id}
+                          className={cn(
+                            optionClass,
+                            disabledOption && 'cursor-not-allowed opacity-50 hover:border-line',
+                          )}
+                        >
+                          <input
+                            type="checkbox"
+                            className="size-4 accent-primary"
+                            checked={selected}
+                            disabled={disabledOption}
+                            aria-label={option.meal.name}
+                            onChange={() =>
+                              toggleSelection(option.id, peripheralIds, setPeripheralIds)
+                            }
+                          />
+                          <span className="font-medium">
+                            {option.meal.name}{' '}
+                            <span className="text-xs text-ink-soft">· inclus</span>
+                          </span>
+                        </label>
+                      )
+                    })}
+                  </div>
+                </fieldset>
+              ) : null}
+
+              {supplementOptions.length > 0 ? (
+                <fieldset className="mt-6">
+                  <legend className="font-bold text-ink">Suppléments payants</legend>
+                  <div className="mt-3 grid gap-2">
+                    {supplementOptions.map((option) => (
+                      <label key={option.id} className={cn(optionClass, 'justify-between')}>
+                        <span className="flex items-center gap-3 font-medium">
+                          <input
+                            type="checkbox"
+                            className="size-4 accent-primary"
+                            checked={supplementIds.includes(option.id)}
+                            onChange={() =>
+                              toggleSelection(option.id, supplementIds, setSupplementIds)
+                            }
+                          />
+                          {option.meal.name}
+                        </span>
+                        <span className="text-sm font-bold text-ink">
+                          + {formatPrice(option.meal.priceCents)}
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+                </fieldset>
+              ) : null}
+
+              <div className="mt-7 rounded-2xl bg-brand-soft/70 p-4 text-sm">
+                <div className="flex items-center justify-between font-bold text-ink">
+                  <span>Total à payer sur place</span>
+                  <span className="font-display text-2xl font-extrabold">
+                    {formatPrice(socialMealPriceCents + supplementTotal)}
+                  </span>
+                </div>
+                <p className="mt-2 text-ink-soft">
+                  Cette confirmation réserve le repas. Elle ne débite pas Izly et ne confirme aucun
+                  paiement.
+                </p>
               </div>
               <button
                 type="button"
-                onClick={() => setComposerOpen(false)}
-                className="grid min-h-11 min-w-11 place-items-center rounded-full border border-forest/20"
-                aria-label="Fermer"
+                onClick={() => mutation.mutate()}
+                disabled={mutation.isPending || !compositionIsReady}
+                className="mt-5 min-h-13 w-full rounded-full bg-primary px-5 font-extrabold text-primary-foreground shadow-sm transition-colors hover:bg-brand-deep disabled:cursor-not-allowed disabled:opacity-60"
               >
-                <X className="h-5 w-5" />
+                {mutation.isPending
+                  ? 'Réservation en cours…'
+                  : compositionIsReady
+                    ? 'Confirmer la réservation'
+                    : 'Choisissez une entrée et un dessert'}
               </button>
             </div>
-            <p className="mt-3 text-sm text-ink/75">
-              Plateau CROUS standard : {menuItem.meal.name} + entrée + dessert (
-              {formatPrice(socialMealPriceCents)} avec compte Izly actif). Les éventuels suppléments
-              s’ajoutent et seront réglés sur le TPE Izly lors du retrait.
-            </p>
-
-            {starterOptions.length > 0 ? (
-              <fieldset className="mt-6">
-                <legend className="font-bold">
-                  Entrée <span className="text-tomato">(obligatoire)</span>
-                </legend>
-                <div className="mt-3 grid gap-2">
-                  {starterOptions.map((option) => {
-                    const selected = peripheralIds.includes(option.id)
-                    return (
-                      <label
-                        key={option.id}
-                        className="flex min-h-11 items-center gap-3 rounded-xl border border-forest/15 bg-white px-4 py-2"
-                      >
-                        <input
-                          type="radio"
-                          name={`starter-${menuItem.id}-${slot.id}`}
-                          checked={selected}
-                          onChange={() => selectPeripheral(option, starterOptions)}
-                        />
-                        <span>
-                          {option.meal.name} <span className="text-xs text-ink/60">· incluse</span>
-                        </span>
-                      </label>
-                    )
-                  })}
-                </div>
-              </fieldset>
-            ) : null}
-
-            {dessertOptions.length > 0 ? (
-              <fieldset className="mt-6">
-                <legend className="font-bold">
-                  Dessert <span className="text-tomato">(obligatoire)</span>
-                </legend>
-                <div className="mt-3 grid gap-2">
-                  {dessertOptions.map((option) => {
-                    const selected = peripheralIds.includes(option.id)
-                    return (
-                      <label
-                        key={option.id}
-                        className="flex min-h-11 items-center gap-3 rounded-xl border border-forest/15 bg-white px-4 py-2"
-                      >
-                        <input
-                          type="radio"
-                          name={`dessert-${menuItem.id}-${slot.id}`}
-                          checked={selected}
-                          onChange={() => selectPeripheral(option, dessertOptions)}
-                        />
-                        <span>
-                          {option.meal.name} <span className="text-xs text-ink/60">· inclus</span>
-                        </span>
-                      </label>
-                    )
-                  })}
-                </div>
-              </fieldset>
-            ) : null}
-
-            {otherPeripheralOptions.length > 0 && !hasRequiredComposition ? (
-              <fieldset className="mt-6">
-                <legend className="font-bold">Périphériques (2 choix maximum)</legend>
-                <div className="mt-3 grid gap-2">
-                  {otherPeripheralOptions.map((option) => {
-                    const selected = peripheralIds.includes(option.id)
-                    const disabledOption = !selected && peripheralIds.length >= 2
-                    return (
-                      <label
-                        key={option.id}
-                        className={cn(
-                          'flex min-h-11 items-center gap-3 rounded-xl border border-forest/15 bg-white px-4 py-2',
-                          disabledOption && 'opacity-50 cursor-not-allowed',
-                        )}
-                      >
-                        <input
-                          type="checkbox"
-                          checked={selected}
-                          disabled={disabledOption}
-                          aria-label={option.meal.name}
-                          onChange={() =>
-                            toggleSelection(option.id, peripheralIds, setPeripheralIds)
-                          }
-                        />
-                        <span>
-                          {option.meal.name} <span className="text-xs text-ink/60">· inclus</span>
-                        </span>
-                      </label>
-                    )
-                  })}
-                </div>
-              </fieldset>
-            ) : null}
-
-            {supplementOptions.length > 0 ? (
-              <fieldset className="mt-6">
-                <legend className="font-bold">Suppléments payants</legend>
-                <div className="mt-3 grid gap-2">
-                  {supplementOptions.map((option) => (
-                    <label
-                      key={option.id}
-                      className="flex min-h-11 items-center justify-between gap-3 rounded-xl border border-forest/15 bg-white px-4 py-2"
-                    >
-                      <span className="flex items-center gap-3">
-                        <input
-                          type="checkbox"
-                          checked={supplementIds.includes(option.id)}
-                          onChange={() =>
-                            toggleSelection(option.id, supplementIds, setSupplementIds)
-                          }
-                        />
-                        {option.meal.name}
-                      </span>
-                      <span className="text-sm font-bold">
-                        + {formatPrice(option.meal.priceCents)}
-                      </span>
-                    </label>
-                  ))}
-                </div>
-              </fieldset>
-            ) : null}
-
-            <div className="mt-7 rounded-2xl bg-sage/20 p-4 text-sm">
-              <div className="flex justify-between font-bold">
-                <span>Total à payer sur place</span>
-                <span>{formatPrice(socialMealPriceCents + supplementTotal)}</span>
-              </div>
-              <p className="mt-2 text-ink/70">
-                Cette confirmation réserve le repas. Elle ne débite pas Izly et ne confirme aucun
-                paiement.
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={() => mutation.mutate()}
-              disabled={mutation.isPending || !compositionIsReady}
-              className="mt-5 min-h-12 w-full rounded-full bg-tomato px-5 font-bold text-paper disabled:opacity-60"
-            >
-              {mutation.isPending
-                ? 'Réservation en cours…'
-                : compositionIsReady
-                  ? 'Confirmer la réservation'
-                  : 'Choisissez une entrée et un dessert'}
-            </button>
           </section>
         </div>
       ) : null}

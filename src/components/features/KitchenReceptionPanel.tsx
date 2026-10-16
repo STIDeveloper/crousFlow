@@ -158,18 +158,18 @@ export function KitchenReceptionPanel({ serviceDate: serviceDateProp }: { servic
     return (
       <section
         role="status"
-        className="rounded-2xl border border-warn/40 bg-night-2 p-6 text-center"
+        className="rounded-2xl border border-warn/40 bg-deep-2 p-6 text-center"
       >
-        <WifiOff className="mx-auto mb-3 size-7 text-glow" />
+        <WifiOff className="mx-auto mb-3 size-7 text-highlight" />
         <h2 className="font-display text-xl font-bold">Réception hors ligne</h2>
-        <p className="mt-2 text-sage">Reconnectez-vous pour charger les quantités attendues.</p>
+        <p className="mt-2 text-mist">Reconnectez-vous pour charger les quantités attendues.</p>
       </section>
     )
   }
   if (query.isLoading)
     return (
       <div
-        className="h-56 animate-pulse rounded-2xl bg-night-2"
+        className="h-56 animate-pulse rounded-2xl bg-deep-2"
         aria-label="Chargement de la réception"
       />
     )
@@ -177,15 +177,15 @@ export function KitchenReceptionPanel({ serviceDate: serviceDateProp }: { servic
     return (
       <section
         role="alert"
-        className="rounded-2xl border border-danger/40 bg-night-2 p-6 text-center"
+        className="rounded-2xl border border-danger/40 bg-deep-2 p-6 text-center"
       >
         <AlertTriangle className="mx-auto mb-3 size-7 text-danger" />
         <h2 className="font-display text-xl font-bold">Impossible de charger la réception</h2>
-        <p className="mt-2 text-sage">{query.error.message}</p>
+        <p className="mt-2 text-mist">{query.error.message}</p>
         <button
           type="button"
           onClick={() => void query.refetch()}
-          className="mt-4 inline-flex min-h-11 items-center gap-2 rounded-xl border border-sage/40 px-4 font-bold"
+          className="mt-4 inline-flex min-h-11 items-center gap-2 rounded-xl border border-mist/40 px-4 font-bold"
         >
           <RefreshCw className="size-4" /> Réessayer
         </button>
@@ -211,15 +211,15 @@ export function KitchenReceptionPanel({ serviceDate: serviceDateProp }: { servic
   )
   return (
     <section
-      className="rounded-2xl border border-glow/30 bg-night-2 p-5 sm:p-7"
+      className="rounded-2xl border border-highlight/30 bg-deep-2 p-5 sm:p-7"
       aria-label="Réception des produits"
     >
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="flex gap-3">
-          <ClipboardList className="mt-1 size-6 text-glow" />
+          <ClipboardList className="mt-1 size-6 text-highlight" />
           <div>
             <h2 className="font-display text-2xl font-bold">Réception du service</h2>
-            <p className="mt-1 text-sm text-sage">
+            <p className="mt-1 text-sm text-mist">
               Saisissez reçu et refusé : seul le reçu accepté entre en stock.
             </p>
           </div>
@@ -229,14 +229,14 @@ export function KitchenReceptionPanel({ serviceDate: serviceDateProp }: { servic
             <button
               type="button"
               onClick={fillAllExpected}
-              className="inline-flex min-h-10 items-center gap-1.5 rounded-xl border border-glow/50 bg-glow/10 px-3 text-xs font-bold text-glow hover:bg-glow/20 transition-colors"
+              className="inline-flex min-h-10 items-center gap-1.5 rounded-xl border border-highlight/50 bg-highlight/10 px-3 text-xs font-bold text-highlight hover:bg-highlight/20 transition-colors"
             >
               <CheckCircle2 className="size-3.5" />
               Tout conforme (Reçu = Attendu)
             </button>
           ) : null}
-          <div className="rounded-xl bg-sage/10 px-3 py-2 text-sm text-sage">
-            <strong className="text-paper">{acceptedTotal}</strong> portions acceptées
+          <div className="rounded-xl bg-mist/10 px-3 py-2 text-sm text-mist">
+            <strong className="text-surface">{acceptedTotal}</strong> portions acceptées
           </div>
         </div>
       </div>
@@ -246,7 +246,7 @@ export function KitchenReceptionPanel({ serviceDate: serviceDateProp }: { servic
         </div>
       ) : null}
       {lines.length === 0 ? (
-        <div className="mt-6 rounded-xl border border-dashed border-sage/30 p-6 text-center text-sage">
+        <div className="mt-6 rounded-xl border border-dashed border-mist/30 p-6 text-center text-mist">
           Aucune ligne de réception configurée pour cette date.
         </div>
       ) : (
@@ -255,11 +255,11 @@ export function KitchenReceptionPanel({ serviceDate: serviceDateProp }: { servic
             const accepted = Math.max(0, line.receivedQuantity - line.rejectedQuantity)
             const difference = accepted - line.expectedQuantity
             return (
-              <article key={line.id} className="rounded-xl border border-sage/20 bg-night p-4">
+              <article key={line.id} className="rounded-xl border border-mist/20 bg-deep p-4">
                 <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
                   <div className="min-w-0 flex-1">
                     <h3 className="font-bold">{line.productName}</h3>
-                    <p className="text-sm text-sage">
+                    <p className="text-sm text-mist">
                       Attendu : {line.expectedQuantity} · Accepté : {accepted}
                       {difference < 0 ? (
                         <span className="ml-2 font-bold text-warn">Écart {difference}</span>
@@ -267,7 +267,7 @@ export function KitchenReceptionPanel({ serviceDate: serviceDateProp }: { servic
                     </p>
                   </div>
                   <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-                    <label className="grid gap-1 text-xs font-bold text-sage">
+                    <label className="grid gap-1 text-xs font-bold text-mist">
                       Reçu
                       <input
                         type="number"
@@ -277,10 +277,10 @@ export function KitchenReceptionPanel({ serviceDate: serviceDateProp }: { servic
                           updateLine(line.id, 'receivedQuantity', event.target.value)
                         }
                         disabled={!isOnline}
-                        className="min-h-11 w-24 rounded-lg border border-sage/40 bg-night px-2 font-mono text-base text-paper"
+                        className="min-h-11 w-24 rounded-lg border border-mist/40 bg-deep px-2 font-mono text-base text-surface"
                       />
                     </label>
-                    <label className="grid gap-1 text-xs font-bold text-sage">
+                    <label className="grid gap-1 text-xs font-bold text-mist">
                       Refusé
                       <input
                         type="number"
@@ -290,7 +290,7 @@ export function KitchenReceptionPanel({ serviceDate: serviceDateProp }: { servic
                           updateLine(line.id, 'rejectedQuantity', event.target.value)
                         }
                         disabled={!isOnline}
-                        className="min-h-11 w-24 rounded-lg border border-sage/40 bg-night px-2 font-mono text-base text-paper"
+                        className="min-h-11 w-24 rounded-lg border border-mist/40 bg-deep px-2 font-mono text-base text-surface"
                       />
                     </label>
                     <span className="self-end rounded-lg bg-ok/10 px-3 py-3 text-center text-sm font-bold text-ok">
@@ -299,33 +299,33 @@ export function KitchenReceptionPanel({ serviceDate: serviceDateProp }: { servic
                   </div>
                 </div>
                 <div className="mt-3 grid gap-2 sm:grid-cols-3">
-                  <label className="grid gap-1 text-xs font-bold text-sage">
+                  <label className="grid gap-1 text-xs font-bold text-mist">
                     Référence lot
                     <input
                       value={line.lotReference ?? ''}
                       onChange={(event) => updateLine(line.id, 'lotReference', event.target.value)}
                       disabled={!isOnline}
-                      className="min-h-10 rounded-lg border border-sage/30 bg-night-2 px-3 text-sm text-paper"
+                      className="min-h-10 rounded-lg border border-mist/30 bg-deep-2 px-3 text-sm text-surface"
                       placeholder="Optionnel"
                     />
                   </label>
-                  <label className="grid gap-1 text-xs font-bold text-sage">
+                  <label className="grid gap-1 text-xs font-bold text-mist">
                     DLC
                     <input
                       type="date"
                       value={line.expiresAt ?? ''}
                       onChange={(event) => updateLine(line.id, 'expiresAt', event.target.value)}
                       disabled={!isOnline}
-                      className="min-h-10 rounded-lg border border-sage/30 bg-night-2 px-3 text-sm text-paper"
+                      className="min-h-10 rounded-lg border border-mist/30 bg-deep-2 px-3 text-sm text-surface"
                     />
                   </label>
-                  <label className="grid gap-1 text-xs font-bold text-sage">
+                  <label className="grid gap-1 text-xs font-bold text-mist">
                     Observation
                     <input
                       value={line.observation ?? ''}
                       onChange={(event) => updateLine(line.id, 'observation', event.target.value)}
                       disabled={!isOnline}
-                      className="min-h-10 rounded-lg border border-sage/30 bg-night-2 px-3 text-sm text-paper"
+                      className="min-h-10 rounded-lg border border-mist/30 bg-deep-2 px-3 text-sm text-surface"
                       placeholder="Température, colis…"
                     />
                   </label>
@@ -340,7 +340,7 @@ export function KitchenReceptionPanel({ serviceDate: serviceDateProp }: { servic
           type="button"
           disabled={!isOnline || receiveMutation.isPending}
           onClick={() => receiveMutation.mutate()}
-          className="mt-5 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-glow px-5 font-bold text-night disabled:cursor-not-allowed disabled:opacity-50"
+          className="mt-5 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-highlight px-5 font-bold text-deep disabled:cursor-not-allowed disabled:opacity-50"
         >
           {receiveMutation.isPending ? (
             <Loader2 className="size-5 animate-spin motion-reduce:animate-none" />

@@ -208,11 +208,11 @@ export function AdminCatalogue() {
     return (
       <section
         role="status"
-        className="rounded-2xl border border-warn/40 bg-night-2 p-8 text-center"
+        className="rounded-2xl border border-warn/40 bg-deep-2 p-8 text-center"
       >
-        <WifiOff className="mx-auto mb-3 size-8 text-glow" />
+        <WifiOff className="mx-auto mb-3 size-8 text-highlight" />
         <h1 className="font-display text-2xl font-bold">Catalogue hors ligne</h1>
-        <p className="mt-2 text-sage">Reconnectez-vous pour gérer les produits.</p>
+        <p className="mt-2 text-mist">Reconnectez-vous pour gérer les produits.</p>
       </section>
     )
   }
@@ -220,7 +220,7 @@ export function AdminCatalogue() {
   if (productsQuery.isLoading) {
     return (
       <div
-        className="h-96 animate-pulse rounded-2xl bg-night-2"
+        className="h-96 animate-pulse rounded-2xl bg-deep-2"
         aria-label="Chargement du catalogue"
       />
     )
@@ -230,15 +230,15 @@ export function AdminCatalogue() {
     return (
       <section
         role="alert"
-        className="rounded-2xl border border-danger/40 bg-night-2 p-8 text-center"
+        className="rounded-2xl border border-danger/40 bg-deep-2 p-8 text-center"
       >
         <AlertTriangle className="mx-auto mb-3 size-8 text-danger" />
         <h1 className="font-display text-2xl font-bold">Le catalogue est indisponible.</h1>
-        <p className="mt-2 text-sage">{productsQuery.error.message}</p>
+        <p className="mt-2 text-mist">{productsQuery.error.message}</p>
         <button
           type="button"
           onClick={() => void productsQuery.refetch()}
-          className="mt-5 inline-flex min-h-11 items-center gap-2 rounded-xl border border-sage/40 px-4 font-bold"
+          className="mt-5 inline-flex min-h-11 items-center gap-2 rounded-xl border border-mist/40 px-4 font-bold"
         >
           <RefreshCw className="size-4" /> Réessayer
         </button>
@@ -257,49 +257,49 @@ export function AdminCatalogue() {
       ) : null}
       <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p className="text-xs font-bold uppercase tracking-[.18em] text-glow">
+          <p className="text-xs font-bold uppercase tracking-[.18em] text-highlight">
             Préparer le service
           </p>
           <h1 className="mt-2 font-display text-3xl font-bold sm:text-4xl md:text-5xl">
             Catalogue produits
           </h1>
-          <p className="mt-2 max-w-2xl text-sage">
+          <p className="mt-2 max-w-2xl text-mist">
             Créez les plats, entrées, desserts et suppléments qui pourront être publiés dans un
             service.
           </p>
         </div>
-        <span className="w-fit rounded-full border border-sage/30 px-4 py-2 text-sm font-bold text-sage">
+        <span className="w-fit rounded-full border border-mist/30 px-4 py-2 text-sm font-bold text-mist">
           {products.length} produit{products.length > 1 ? 's' : ''}
         </span>
       </header>
 
       <div className="grid min-w-0 gap-6 xl:grid-cols-[minmax(0,1fr)_24rem]">
         <section
-          className="order-2 min-w-0 rounded-2xl border border-sage/20 bg-night-2 p-4 sm:p-6 xl:order-1"
+          className="order-2 min-w-0 rounded-2xl border border-mist/20 bg-deep-2 p-4 sm:p-6 xl:order-1"
           aria-label="Produits du catalogue"
         >
           {products.length === 0 ? (
             <div className="py-14 text-center">
-              <PackagePlus className="mx-auto mb-3 size-10 text-glow" />
+              <PackagePlus className="mx-auto mb-3 size-10 text-highlight" />
               <h2 className="font-display text-2xl font-bold">Votre catalogue est vide</h2>
-              <p className="mt-2 text-sage">Ajoutez le premier produit avec le formulaire.</p>
+              <p className="mt-2 text-mist">Ajoutez le premier produit avec le formulaire.</p>
             </div>
           ) : (
             <div className="grid min-w-0 gap-3 sm:grid-cols-2">
               {products.map((product) => (
                 <article
                   key={product.id}
-                  className={`min-w-0 rounded-xl border p-4 ${product.active ? 'border-sage/25 bg-night' : 'border-danger/30 bg-danger/5 opacity-70'}`}
+                  className={`min-w-0 rounded-xl border p-4 ${product.active ? 'border-mist/25 bg-deep' : 'border-danger/30 bg-danger/5 opacity-70'}`}
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0 flex-1">
-                      <p className="text-xs font-bold uppercase tracking-wider text-glow">
+                      <p className="text-xs font-bold uppercase tracking-wider text-highlight">
                         {product.productType}
                       </p>
                       <h2 className="mt-1 truncate font-display text-xl font-bold">
                         {product.name}
                       </h2>
-                      <p className="mt-1 text-sm text-sage">
+                      <p className="mt-1 text-sm text-mist">
                         {product.category} ·{' '}
                         {(product.priceCents / 100).toFixed(2).replace('.', ',')} €
                       </p>
@@ -311,21 +311,21 @@ export function AdminCatalogue() {
                     </span>
                   </div>
                   {product.description ? (
-                    <p className="mt-3 line-clamp-2 text-sm text-paper/80 break-words">
+                    <p className="mt-3 line-clamp-2 text-sm text-surface/80 break-words">
                       {product.description}
                     </p>
                   ) : null}
                   <div className="mt-4 flex flex-wrap items-center gap-2">
                     {product.sideCategory ? (
-                      <span className="rounded-full bg-forest/20 px-2 py-1 text-xs font-bold text-forest">
+                      <span className="rounded-full bg-primary/20 px-2 py-1 text-xs font-bold text-primary">
                         {product.sideCategory === 'DESSERT' ? 'Dessert' : 'Entrée'}
                       </span>
                     ) : null}
-                    <span className="rounded-full border border-sage/20 px-2 py-1 text-xs text-sage">
+                    <span className="rounded-full border border-mist/20 px-2 py-1 text-xs text-mist">
                       {product.socialEligible ? 'Formule sociale' : 'À la carte'}
                     </span>
                     {product.allergens.length ? (
-                      <span className="rounded-full border border-sage/20 px-2 py-1 text-xs text-sage">
+                      <span className="rounded-full border border-mist/20 px-2 py-1 text-xs text-mist">
                         Allergènes : {product.allergens.join(', ')}
                       </span>
                     ) : null}
@@ -338,7 +338,7 @@ export function AdminCatalogue() {
                         setEditingId(product.id)
                         setForm(toForm(product))
                       }}
-                      className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-sage/35 px-3 text-sm font-bold disabled:opacity-50"
+                      className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-mist/35 px-3 text-sm font-bold disabled:opacity-50"
                     >
                       <Pencil className="size-4" /> Modifier
                     </button>
@@ -346,7 +346,7 @@ export function AdminCatalogue() {
                       type="button"
                       disabled={!isOnline || toggleMutation.isPending}
                       onClick={() => toggleMutation.mutate(product)}
-                      className="min-h-10 rounded-xl border border-sage/35 px-3 text-sm font-bold disabled:opacity-50"
+                      className="min-h-10 rounded-xl border border-mist/35 px-3 text-sm font-bold disabled:opacity-50"
                     >
                       {product.active ? 'Désactiver' : 'Réactiver'}
                     </button>
@@ -359,10 +359,10 @@ export function AdminCatalogue() {
 
         <form
           onSubmit={submit}
-          className="order-1 h-fit min-w-0 w-full rounded-2xl border border-glow/30 bg-night-2 p-4 sm:p-6 xl:order-2"
+          className="order-1 h-fit min-w-0 w-full rounded-2xl border border-highlight/30 bg-deep-2 p-4 sm:p-6 xl:order-2"
         >
           <div className="flex items-center gap-2">
-            <PackagePlus className="size-5 text-glow shrink-0" />
+            <PackagePlus className="size-5 text-highlight shrink-0" />
             <h2 className="font-display text-xl font-bold sm:text-2xl">
               {editingId ? 'Modifier le produit' : 'Nouveau produit'}
             </h2>
@@ -374,7 +374,7 @@ export function AdminCatalogue() {
                 required
                 value={form.name}
                 onChange={(event) => updateForm('name', event.target.value)}
-                className="min-h-11 w-full rounded-xl border border-sage/40 bg-night px-3 font-normal text-paper"
+                className="min-h-11 w-full rounded-xl border border-mist/40 bg-deep px-3 font-normal text-surface"
                 placeholder="Ex. Curry de légumes"
               />
             </label>
@@ -383,7 +383,7 @@ export function AdminCatalogue() {
               <textarea
                 value={form.description}
                 onChange={(event) => updateForm('description', event.target.value)}
-                className="min-h-20 w-full rounded-xl border border-sage/40 bg-night px-3 py-2 font-normal text-paper resize-y"
+                className="min-h-20 w-full rounded-xl border border-mist/40 bg-deep px-3 py-2 font-normal text-surface resize-y"
                 placeholder="Description affichée à l'étudiant"
               />
             </label>
@@ -394,7 +394,7 @@ export function AdminCatalogue() {
                   required
                   value={form.category}
                   onChange={(event) => updateForm('category', event.target.value)}
-                  className="min-h-11 w-full rounded-xl border border-sage/40 bg-night px-3 font-normal text-paper"
+                  className="min-h-11 w-full rounded-xl border border-mist/40 bg-deep px-3 font-normal text-surface"
                   placeholder="Plat, Entrée…"
                 />
               </label>
@@ -406,7 +406,7 @@ export function AdminCatalogue() {
                   min="0"
                   value={form.priceCents}
                   onChange={(event) => updateForm('priceCents', event.target.value)}
-                  className="min-h-11 w-full rounded-xl border border-sage/40 bg-night px-3 font-mono font-normal text-paper"
+                  className="min-h-11 w-full rounded-xl border border-mist/40 bg-deep px-3 font-mono font-normal text-surface"
                 />
               </label>
             </div>
@@ -415,7 +415,7 @@ export function AdminCatalogue() {
               <select
                 value={form.productType}
                 onChange={(event) => updateForm('productType', event.target.value as ProductType)}
-                className="min-h-11 w-full rounded-xl border border-sage/40 bg-night px-3 font-normal text-paper"
+                className="min-h-11 w-full rounded-xl border border-mist/40 bg-deep px-3 font-normal text-surface"
               >
                 <option value="MAIN">Plat chaud</option>
                 <option value="SIDE">Périphérique (Entrée ou dessert)</option>
@@ -431,7 +431,7 @@ export function AdminCatalogue() {
                   onChange={(event) =>
                     updateForm('sideCategory', event.target.value as 'STARTER' | 'DESSERT')
                   }
-                  className="min-h-11 w-full rounded-xl border border-sage/40 bg-night px-3 font-normal text-paper"
+                  className="min-h-11 w-full rounded-xl border border-mist/40 bg-deep px-3 font-normal text-surface"
                 >
                   <option value="STARTER">Entrée</option>
                   <option value="DESSERT">Dessert</option>
@@ -443,11 +443,11 @@ export function AdminCatalogue() {
               <input
                 value={form.allergens}
                 onChange={(event) => updateForm('allergens', event.target.value)}
-                className="min-h-11 w-full rounded-xl border border-sage/40 bg-night px-3 font-normal text-paper"
+                className="min-h-11 w-full rounded-xl border border-mist/40 bg-deep px-3 font-normal text-surface"
                 placeholder="Gluten, Lait"
               />
             </label>
-            <label className="flex min-h-11 items-center gap-3 rounded-xl border border-sage/25 bg-night px-3 text-sm font-bold">
+            <label className="flex min-h-11 items-center gap-3 rounded-xl border border-mist/25 bg-deep px-3 text-sm font-bold">
               <input
                 type="checkbox"
                 checked={form.socialEligible}
@@ -461,7 +461,7 @@ export function AdminCatalogue() {
             <button
               type="submit"
               disabled={!isOnline || saveMutation.isPending || !form.name.trim()}
-              className="inline-flex min-h-12 flex-1 items-center justify-center gap-2 rounded-full bg-glow px-5 font-bold text-night disabled:cursor-not-allowed disabled:opacity-50"
+              className="inline-flex min-h-12 flex-1 items-center justify-center gap-2 rounded-full bg-highlight px-5 font-bold text-deep disabled:cursor-not-allowed disabled:opacity-50"
             >
               {saveMutation.isPending ? (
                 <Loader2 className="size-5 animate-spin motion-reduce:animate-none" />
@@ -477,7 +477,7 @@ export function AdminCatalogue() {
                   setEditingId(null)
                   setForm(emptyForm)
                 }}
-                className="min-h-12 rounded-full border border-sage/40 px-4 font-bold"
+                className="min-h-12 rounded-full border border-mist/40 px-4 font-bold"
               >
                 Annuler
               </button>

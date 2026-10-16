@@ -10,7 +10,8 @@ export function Providers({ children }: { children: React.ReactNode }) {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <NextThemesProvider attribute="class" defaultTheme="system" enableSystem>
+      {/* Thème fixe : clair pour l'étudiant ; l'espace personnel applique .theme-staff lui-même. */}
+      <NextThemesProvider attribute="class" forcedTheme="light">
         <MotionConfig reducedMotion="user">{children}</MotionConfig>
       </NextThemesProvider>
     </QueryClientProvider>

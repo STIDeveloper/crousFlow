@@ -84,7 +84,7 @@ export function KitchenShortageManager({ serviceDate }: { serviceDate: string })
 
   if (isLoading) {
     return (
-      <div className="rounded-2xl border border-sage/20 bg-night-2 p-5 animate-pulse text-sage text-sm">
+      <div className="rounded-2xl border border-mist/20 bg-deep-2 p-5 animate-pulse text-mist text-sm">
         Vérification des ruptures de stock...
       </div>
     )
@@ -103,11 +103,11 @@ export function KitchenShortageManager({ serviceDate }: { serviceDate: string })
         <div className="flex items-center gap-2.5">
           <AlertTriangle className="size-6 text-warn shrink-0" />
           <div>
-            <h2 className="font-display text-xl font-bold text-paper">
+            <h2 className="font-display text-xl font-bold text-surface">
               {items.length} commande{items.length > 1 ? 's' : ''} affectée
               {items.length > 1 ? 's' : ''} par une rupture de livraison
             </h2>
-            <p className="text-xs text-sage">
+            <p className="text-xs text-mist">
               La livraison reçue est inférieure aux portions réservées. Choisissez une substitution
               en stock ou annulez.
             </p>
@@ -116,7 +116,7 @@ export function KitchenShortageManager({ serviceDate }: { serviceDate: string })
         <button
           type="button"
           onClick={() => void refetch()}
-          className="inline-flex min-h-9 items-center gap-1.5 self-start sm:self-auto rounded-lg border border-warn/40 bg-night px-3 text-xs font-bold text-warn hover:bg-warn/20"
+          className="inline-flex min-h-9 items-center gap-1.5 self-start sm:self-auto rounded-lg border border-warn/40 bg-deep px-3 text-xs font-bold text-warn hover:bg-warn/20"
         >
           <RefreshCw className="size-3.5" /> Actualiser
         </button>
@@ -133,13 +133,13 @@ export function KitchenShortageManager({ serviceDate }: { serviceDate: string })
           return (
             <article
               key={item.reservationId}
-              className="rounded-xl border border-warn/30 bg-night p-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between"
+              className="rounded-xl border border-warn/30 bg-deep p-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between"
             >
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
-                  <span className="font-bold text-paper">{item.studentName}</span>
-                  <span className="font-mono text-xs text-sage">({item.studentEmail})</span>
-                  <span className="rounded bg-night-2 px-2 py-0.5 text-xs font-mono text-glow">
+                  <span className="font-bold text-surface">{item.studentName}</span>
+                  <span className="font-mono text-xs text-mist">({item.studentEmail})</span>
+                  <span className="rounded bg-deep-2 px-2 py-0.5 text-xs font-mono text-highlight">
                     {item.slotTime}
                   </span>
                 </div>
@@ -166,7 +166,7 @@ export function KitchenShortageManager({ serviceDate }: { serviceDate: string })
                         }))
                       }
                       aria-label="Produit de remplacement"
-                      className="min-h-10 rounded-lg border border-sage/40 bg-night-2 px-2.5 text-xs font-bold text-paper focus:ring-1 focus:ring-glow"
+                      className="min-h-10 rounded-lg border border-mist/40 bg-deep-2 px-2.5 text-xs font-bold text-surface focus:ring-1 focus:ring-highlight"
                     >
                       {item.availableReplacements.map((r) => (
                         <option key={r.mealId} value={r.mealId}>
@@ -185,7 +185,7 @@ export function KitchenShortageManager({ serviceDate }: { serviceDate: string })
                           substituteMealId: chosenSubstitute,
                         })
                       }
-                      className="inline-flex min-h-10 items-center gap-1 rounded-lg bg-glow px-3 text-xs font-bold text-night hover:bg-glow/90 disabled:opacity-50"
+                      className="inline-flex min-h-10 items-center gap-1 rounded-lg bg-highlight px-3 text-xs font-bold text-deep hover:bg-highlight/90 disabled:opacity-50"
                     >
                       {isProcessing ? (
                         <Loader2 className="size-3.5 animate-spin" />
@@ -196,7 +196,7 @@ export function KitchenShortageManager({ serviceDate }: { serviceDate: string })
                     </button>
                   </div>
                 ) : (
-                  <span className="text-xs text-sage italic">Aucun remplacement en stock</span>
+                  <span className="text-xs text-mist italic">Aucun remplacement en stock</span>
                 )}
 
                 <button

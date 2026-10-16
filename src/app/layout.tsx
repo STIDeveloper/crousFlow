@@ -1,10 +1,11 @@
-import { Fraunces, Geist, Geist_Mono } from 'next/font/google'
+import type { Metadata, Viewport } from 'next'
+import { Geist, Geist_Mono, Raleway } from 'next/font/google'
 import './globals.css'
 import { Providers } from '@/components/providers/Providers'
 import { Toaster } from 'sonner'
 
-const fraunces = Fraunces({
-  variable: '--font-fraunces',
+const raleway = Raleway({
+  variable: '--font-raleway',
   subsets: ['latin'],
 })
 
@@ -18,20 +19,29 @@ const geistMono = Geist_Mono({
   subsets: ['latin'],
 })
 
-export const metadata = {
-  title: 'CrousFlow',
-  description: 'Zéro file, zéro gaspillage.',
+export const metadata: Metadata = {
+  title: {
+    default: 'CrousFlow — Réservez votre repas, sans file',
+    template: '%s · CrousFlow',
+  },
+  description:
+    'CrousFlow : réservation des repas en restaurant universitaire, ticket QR au retrait et prévision de la production pour réduire les files et le gaspillage.',
+  applicationName: 'CrousFlow',
+}
+
+export const viewport: Viewport = {
+  themeColor: '#01abd5',
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="fr" suppressHydrationWarning>
       <body
-        className={`${fraunces.variable} ${geistSans.variable} ${geistMono.variable} bg-paper text-ink font-sans antialiased`}
+        className={`${raleway.variable} ${geistSans.variable} ${geistMono.variable} bg-canvas text-ink font-sans antialiased`}
       >
         <Providers>
           {children}
-          <Toaster />
+          <Toaster position="top-center" richColors closeButton />
         </Providers>
       </body>
     </html>

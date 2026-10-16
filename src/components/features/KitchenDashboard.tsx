@@ -5,6 +5,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   AlertTriangle,
   ChefHat,
+  ChevronDown,
   ClipboardCheck,
   Info,
   Minus,
@@ -13,9 +14,10 @@ import {
   Truck,
 } from 'lucide-react'
 import {
-  Area,
+  Bar,
+  BarChart,
   CartesianGrid,
-  ComposedChart,
+  Legend,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -83,16 +85,16 @@ function ScreenState({ kind, retry }: { kind: 'empty' | 'error'; retry?: () => v
         ]
   return (
     <section
-      className="rounded-2xl border border-sage/25 bg-night-2 p-8 text-center"
+      className="rounded-2xl border border-mist/25 bg-deep-2 p-8 text-center"
       role={kind === 'error' ? 'alert' : undefined}
     >
       <AlertTriangle className="mx-auto mb-3 size-8 text-warn" aria-hidden="true" />
       <h2 className="font-display text-xl font-bold">{copy[0]}</h2>
-      <p className="mt-2 text-sm text-sage">{copy[1]}</p>
+      <p className="mt-2 text-sm text-mist">{copy[1]}</p>
       {retry && (
         <button
           onClick={retry}
-          className="mt-5 min-h-11 rounded-xl border border-sage/50 px-4 font-bold hover:bg-sage/15 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-glow"
+          className="mt-5 min-h-11 rounded-xl border border-mist/50 px-4 font-bold hover:bg-mist/15 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-highlight"
         >
           Réessayer
         </button>
@@ -106,6 +108,7 @@ export function KitchenDashboard() {
   const [isOnline, setIsOnline] = useState(true)
   const [serviceDate, setServiceDate] = useState(getNextServiceDate)
   const [activeTab, setActiveTab] = useState<'comptoir' | 'reception' | 'production'>('comptoir')
+  const [showIdleBatches, setShowIdleBatches] = useState(false)
   useEffect(() => {
     const update = () => setIsOnline(navigator.onLine)
     update()
@@ -185,25 +188,37 @@ export function KitchenDashboard() {
   const slotsSummary = slotsSummaryQuery.data ?? []
   const totalPrepared = batches.reduce((sum, batch) => sum + batch.preparedCount, 0)
   const totalPredicted = batches.reduce((sum, batch) => sum + batch.predictedCount, 0)
-  const chartData = batches.map((batch) => ({
+  const sortedBatches = [...batches].sort(
+    (a, b) => b.predictedCount - a.predictedCount || b.preparedCount - a.preparedCount,
+  )
+  const activeBatches = sortedBatches.filter(
+    (batch) => batch.predictedCount > 0 || batch.preparedCount > 0,
+  )
+  const idleBatches = sortedBatches.filter(
+    (batch) => batch.predictedCount === 0 && batch.preparedCount === 0,
+  )
+  const visibleBatches = showIdleBatches ? sortedBatches : activeBatches
+  const chartData = activeBatches.map((batch) => ({
     name: batch.meal?.name ?? 'Repas',
     cible: batch.predictedCount,
     prepare: batch.preparedCount,
   }))
+  const demandForecasts = forecasts.filter((forecast) => forecast.predicted > 0)
+  const idleForecasts = forecasts.filter((forecast) => forecast.predicted <= 0)
   return (
     <div className="mx-auto flex max-w-6xl flex-col gap-6 lg:gap-8">
       {!isOnline && (
         <div
-          className="rounded-xl border border-warn/60 bg-warn/15 p-4 text-sm text-paper"
+          className="rounded-xl border border-warn/60 bg-warn/15 p-4 text-sm text-surface"
           role="alert"
         >
           <strong>Hors ligne.</strong> Les quantités affichées restent consultables, mais aucune
           action ne sera enregistrée.
         </div>
       )}
-      <header className="flex flex-col gap-4 rounded-2xl border border-sage/20 bg-night-2 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
+      <header className="flex flex-col gap-4 rounded-2xl border border-mist/20 bg-deep-2 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
         <div>
-          <p className="text-sm font-bold uppercase tracking-wider text-sage">
+          <p className="text-sm font-bold uppercase tracking-wider text-mist">
             Le bon repas. Au bon moment.
           </p>
           <h1 className="mt-2 font-display text-3xl font-bold capitalize sm:text-5xl">
@@ -213,25 +228,25 @@ export function KitchenDashboard() {
               month: 'long',
             })}
           </h1>
-          <p className="mt-1 text-sm text-sage">
+          <p className="mt-1 text-sm text-mist">
             Saisissez les quantités préparées, puis validez les tickets au retrait.
           </p>
         </div>
         <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
-          <label className="flex flex-col gap-1 text-sm font-bold text-sage" htmlFor="service-date">
+          <label className="flex flex-col gap-1 text-sm font-bold text-mist" htmlFor="service-date">
             Date de service
             <input
               id="service-date"
               type="date"
               value={serviceDate}
               onChange={(event) => setServiceDate(event.target.value)}
-              className="min-h-11 rounded-xl border border-sage/45 bg-night px-3 font-mono text-paper focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-glow"
+              className="min-h-11 rounded-xl border border-mist/45 bg-deep px-3 font-mono text-surface focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-highlight"
             />
           </label>
           <button
             onClick={refresh}
             disabled={!isOnline}
-            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-sage/45 px-4 font-bold hover:bg-sage/15 disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-glow"
+            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-mist/45 px-4 font-bold hover:bg-mist/15 disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-highlight"
           >
             <RefreshCw className="size-4" aria-hidden="true" />
             Actualiser
@@ -242,15 +257,15 @@ export function KitchenDashboard() {
       {/* Barre d'onglets pour navigation fluide du cuisinier */}
       <nav
         aria-label="Espaces cuisine"
-        className="flex flex-wrap gap-2 border-b border-sage/20 pb-3"
+        className="flex flex-wrap gap-2 border-b border-mist/20 pb-3"
       >
         <button
           type="button"
           onClick={() => setActiveTab('comptoir')}
-          className={`inline-flex min-h-12 items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-bold transition-all focus-visible:outline-2 focus-visible:outline-glow ${
+          className={`inline-flex min-h-12 items-center gap-2 rounded-full px-5 py-2.5 text-sm font-bold transition-all focus-visible:outline-2 focus-visible:outline-highlight ${
             activeTab === 'comptoir'
-              ? 'bg-glow text-night shadow-md'
-              : 'border border-sage/25 bg-night-2 text-sage hover:text-paper'
+              ? 'bg-highlight text-deep shadow-md'
+              : 'border border-mist/25 bg-deep-2 text-mist hover:text-surface'
           }`}
         >
           <ClipboardCheck className="size-4" />
@@ -259,10 +274,10 @@ export function KitchenDashboard() {
         <button
           type="button"
           onClick={() => setActiveTab('reception')}
-          className={`inline-flex min-h-12 items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-bold transition-all focus-visible:outline-2 focus-visible:outline-glow ${
+          className={`inline-flex min-h-12 items-center gap-2 rounded-full px-5 py-2.5 text-sm font-bold transition-all focus-visible:outline-2 focus-visible:outline-highlight ${
             activeTab === 'reception'
-              ? 'bg-glow text-night shadow-md'
-              : 'border border-sage/25 bg-night-2 text-sage hover:text-paper'
+              ? 'bg-highlight text-deep shadow-md'
+              : 'border border-mist/25 bg-deep-2 text-mist hover:text-surface'
           }`}
         >
           <Truck className="size-4" />
@@ -271,10 +286,10 @@ export function KitchenDashboard() {
         <button
           type="button"
           onClick={() => setActiveTab('production')}
-          className={`inline-flex min-h-12 items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-bold transition-all focus-visible:outline-2 focus-visible:outline-glow ${
+          className={`inline-flex min-h-12 items-center gap-2 rounded-full px-5 py-2.5 text-sm font-bold transition-all focus-visible:outline-2 focus-visible:outline-highlight ${
             activeTab === 'production'
-              ? 'bg-glow text-night shadow-md'
-              : 'border border-sage/25 bg-night-2 text-sage hover:text-paper'
+              ? 'bg-highlight text-deep shadow-md'
+              : 'border border-mist/25 bg-deep-2 text-mist hover:text-surface'
           }`}
         >
           <ChefHat className="size-4" />
@@ -305,36 +320,36 @@ export function KitchenDashboard() {
       {activeTab === 'production' && (
         <div className="space-y-6">
           <section aria-label="Production du service" className="grid grid-cols-2 gap-3 sm:gap-5">
-            <article className="rounded-[2rem] bg-glow p-5 text-night sm:p-8">
+            <article className="rounded-[2rem] bg-highlight p-5 text-deep sm:p-8">
               <p className="text-xs font-bold uppercase tracking-widest">Repas à préparer</p>
               <p className="mt-3 font-display text-5xl font-bold tabular-nums sm:text-7xl">
                 {totalPredicted}
               </p>
               <p className="mt-2 text-sm">La cible de votre prochain service</p>
             </article>
-            <article className="rounded-[2rem] border border-sage/25 bg-night-2 p-5 sm:p-8">
-              <p className="text-xs font-bold uppercase tracking-widest text-sage">Déjà préparés</p>
+            <article className="rounded-[2rem] border border-mist/25 bg-deep-2 p-5 sm:p-8">
+              <p className="text-xs font-bold uppercase tracking-widest text-mist">Déjà préparés</p>
               <p className="mt-3 font-display text-5xl font-bold tabular-nums text-ok sm:text-7xl">
                 {totalPrepared}
               </p>
-              <p className="mt-2 text-sm text-sage">Chaque portion compte.</p>
+              <p className="mt-2 text-sm text-mist">Chaque portion compte.</p>
             </article>
           </section>
           <div className="grid gap-6 lg:grid-cols-2">
-            <section className="rounded-2xl border border-glow/35 bg-night-2 p-5 sm:p-7">
+            <section className="rounded-2xl border border-highlight/35 bg-deep-2 p-5 sm:p-7">
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <h2 className="font-display text-2xl font-bold">À préparer</h2>
-                  <p className="mt-1 text-sm text-sage">
+                  <p className="mt-1 text-sm text-mist">
                     Cible fondée sur les réservations et la prévision.
                   </p>
                 </div>
-                <span className="rounded-full bg-glow/15 px-3 py-1 text-sm font-bold text-glow">
+                <span className="rounded-full bg-highlight/15 px-3 py-1 text-sm font-bold text-highlight">
                   {totalPrepared}/{totalPredicted}
                 </span>
               </div>
               {batchesQuery.isLoading ? (
-                <div className="mt-6 h-40 animate-pulse rounded-xl bg-night" />
+                <div className="mt-6 h-40 animate-pulse rounded-xl bg-deep" />
               ) : batchesQuery.isError ? (
                 <div className="pt-5">
                   <ScreenState kind="error" retry={() => void batchesQuery.refetch()} />
@@ -345,7 +360,7 @@ export function KitchenDashboard() {
                 </div>
               ) : (
                 <div className="mt-6 space-y-4">
-                  {batches.map((batch) => {
+                  {visibleBatches.map((batch) => {
                     const progress = batch.predictedCount
                       ? Math.min(
                           100,
@@ -356,12 +371,12 @@ export function KitchenDashboard() {
                     return (
                       <article
                         key={batch.id}
-                        className="rounded-xl border border-sage/20 bg-night p-4"
+                        className="rounded-xl border border-mist/20 bg-deep p-4"
                       >
                         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                           <div>
                             <h3 className="font-bold">{batch.meal?.name ?? 'Repas'}</h3>
-                            <p className="text-sm text-sage">
+                            <p className="text-sm text-mist">
                               {batch.preparedCount} préparés · cible {batch.predictedCount}
                             </p>
                           </div>
@@ -375,7 +390,7 @@ export function KitchenDashboard() {
                                 })
                               }
                               disabled={busy || !isOnline}
-                              className="grid size-11 place-items-center rounded-xl bg-sage/15 hover:bg-sage/30 disabled:opacity-50"
+                              className="grid size-11 place-items-center rounded-xl bg-mist/15 hover:bg-mist/30 disabled:opacity-50"
                             >
                               <Minus className="size-5" />
                             </button>
@@ -394,14 +409,14 @@ export function KitchenDashboard() {
                                 })
                               }
                               disabled={busy || !isOnline}
-                              className="grid size-11 place-items-center rounded-xl bg-sage/15 hover:bg-sage/30 disabled:opacity-50"
+                              className="grid size-11 place-items-center rounded-xl bg-mist/15 hover:bg-mist/30 disabled:opacity-50"
                             >
                               <Plus className="size-5" />
                             </button>
                           </div>
                         </div>
                         <div
-                          className="mt-4 h-2 overflow-hidden rounded-full bg-night-2"
+                          className="mt-4 h-2 overflow-hidden rounded-full bg-deep-2"
                           aria-label={`${progress}% de la cible préparée`}
                           role="progressbar"
                           aria-valuenow={progress}
@@ -409,87 +424,122 @@ export function KitchenDashboard() {
                           aria-valuemax={100}
                         >
                           <div
-                            className="h-full bg-glow transition-[width] motion-reduce:transition-none"
+                            className="h-full bg-highlight transition-[width] motion-reduce:transition-none"
                             style={{ width: `${progress}%` }}
                           />
                         </div>
                       </article>
                     )
                   })}
+                  {idleBatches.length > 0 ? (
+                    <button
+                      type="button"
+                      onClick={() => setShowIdleBatches((value) => !value)}
+                      aria-expanded={showIdleBatches}
+                      className="flex min-h-11 w-full items-center justify-center gap-2 rounded-full border border-mist/25 text-sm font-bold text-mist hover:bg-deep hover:text-surface"
+                    >
+                      <ChevronDown
+                        className={`size-4 transition-transform ${showIdleBatches ? 'rotate-180' : ''}`}
+                        aria-hidden="true"
+                      />
+                      {showIdleBatches
+                        ? 'Masquer les produits sans demande'
+                        : `Afficher les produits sans demande (${idleBatches.length})`}
+                    </button>
+                  ) : null}
                 </div>
               )}
             </section>
             <div className="space-y-6">
-              <section className="min-w-0 rounded-2xl border border-sage/20 bg-night-2 p-5 sm:p-6">
+              <section className="min-w-0 rounded-2xl border border-mist/20 bg-deep-2 p-5 sm:p-6">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>
                     <h2 className="font-display text-2xl font-bold">Cible de service</h2>
-                    <p className="mt-1 text-sm text-sage">
+                    <p className="mt-1 text-sm text-mist">
                       Comparaison des quantités préparées et prévues par plat.
                     </p>
                   </div>
-                  <span className="rounded-full border border-sage/30 px-3 py-1 text-xs font-bold text-sage">
+                  <span className="rounded-full border border-mist/30 px-3 py-1 text-xs font-bold text-mist">
                     {forecasts[0]?.method === 'FALLBACK'
                       ? 'Mode secours'
                       : 'Estimation statistique'}
                   </span>
                 </div>
                 {chartData.length ? (
-                  <div className="mt-5 h-64 w-full min-w-0 min-h-[256px]">
-                    <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={256}>
-                      <ComposedChart
+                  <div className="mt-5 h-72 w-full min-w-0 min-h-[288px]">
+                    <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={288}>
+                      <BarChart
                         data={chartData}
                         margin={{ top: 10, right: 8, left: -22, bottom: 0 }}
+                        barGap={4}
                       >
-                        <CartesianGrid strokeDasharray="3 3" stroke="#ffffff18" />
+                        <CartesianGrid
+                          strokeDasharray="3 3"
+                          stroke="var(--color-line)"
+                          vertical={false}
+                        />
                         <XAxis
                           dataKey="name"
-                          stroke="#ffffff80"
+                          stroke="var(--color-mist)"
                           fontSize={12}
                           tickLine={false}
                           axisLine={false}
+                          interval={0}
+                          tickFormatter={(value: string) =>
+                            value.length > 14 ? `${value.slice(0, 13)}…` : value
+                          }
                         />
-                        <YAxis stroke="#ffffff80" fontSize={12} tickLine={false} axisLine={false} />
+                        <YAxis
+                          stroke="var(--color-mist)"
+                          fontSize={12}
+                          tickLine={false}
+                          axisLine={false}
+                          allowDecimals={false}
+                        />
                         <Tooltip
+                          cursor={{ fill: 'var(--color-line)', opacity: 0.35 }}
                           contentStyle={{
-                            backgroundColor: '#203c30',
-                            borderColor: '#ffffff30',
+                            backgroundColor: 'var(--color-deep-2)',
+                            borderColor: 'var(--color-line)',
                             borderRadius: '12px',
+                            color: 'var(--color-surface)',
                           }}
                         />
-                        <Area
+                        <Legend
+                          iconType="circle"
+                          wrapperStyle={{ fontSize: 12, color: 'var(--color-mist)' }}
+                        />
+                        <Bar
                           isAnimationActive={false}
-                          type="monotone"
                           dataKey="cible"
                           name="Cible"
-                          fill="var(--color-glow)"
-                          stroke="var(--color-glow)"
-                          fillOpacity={0.13}
+                          fill="var(--color-highlight)"
+                          radius={[8, 8, 0, 0]}
+                          maxBarSize={36}
                         />
-                        <Area
+                        <Bar
                           isAnimationActive={false}
-                          type="monotone"
                           dataKey="prepare"
                           name="Préparé"
-                          fill="var(--color-forest)"
-                          stroke="var(--color-forest)"
-                          fillOpacity={0.28}
+                          fill="var(--color-ok)"
+                          radius={[8, 8, 0, 0]}
+                          maxBarSize={36}
                         />
-                      </ComposedChart>
+                      </BarChart>
                     </ResponsiveContainer>
                   </div>
                 ) : (
-                  <p className="py-8 text-center text-sm text-sage">Aucune donnée à comparer.</p>
+                  <p className="py-8 text-center text-sm text-mist">Aucune donnée à comparer.</p>
                 )}
               </section>
             </div>
           </div>
 
-          <section className="rounded-2xl border border-sage/20 bg-night-2 p-5 sm:p-6">
+          <section className="rounded-2xl border border-mist/20 bg-deep-2 p-5 sm:p-6">
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <h2 className="font-display text-2xl font-bold">Répartition par créneau</h2>
-                <p className="mt-1 text-sm text-sage">
+                <p className="mt-1 text-sm text-mist">
                   Quantités réservées par produit et par créneau de retrait.
                 </p>
               </div>
@@ -497,24 +547,24 @@ export function KitchenDashboard() {
             <div className="mt-6">
               {slotsSummaryQuery.isLoading ? (
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                  <div className="h-28 animate-pulse rounded-xl bg-night" />
-                  <div className="h-28 animate-pulse rounded-xl bg-night" />
-                  <div className="h-28 animate-pulse rounded-xl bg-night" />
+                  <div className="h-28 animate-pulse rounded-xl bg-deep" />
+                  <div className="h-28 animate-pulse rounded-xl bg-deep" />
+                  <div className="h-28 animate-pulse rounded-xl bg-deep" />
                 </div>
               ) : slotsSummary.length === 0 ? (
-                <p className="text-center text-sm text-sage">Aucun créneau prévu à cette date.</p>
+                <p className="text-center text-sm text-mist">Aucun créneau prévu à cette date.</p>
               ) : (
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                   {slotsSummary.map((slot) => (
                     <article
                       key={slot.id}
-                      className="rounded-xl border border-sage/20 bg-night p-4 flex flex-col"
+                      className="rounded-xl border border-mist/20 bg-deep p-4 flex flex-col"
                     >
-                      <div className="flex items-center justify-between border-b border-sage/10 pb-3">
-                        <span className="font-mono text-lg font-bold text-glow">
+                      <div className="flex items-center justify-between border-b border-mist/10 pb-3">
+                        <span className="font-mono text-lg font-bold text-highlight">
                           {slot.startTime} - {slot.endTime}
                         </span>
-                        <span className="rounded-full bg-forest/20 px-2.5 py-1 text-xs font-bold text-forest">
+                        <span className="rounded-full bg-primary/20 px-2.5 py-1 text-xs font-bold text-primary">
                           {slot.totalCount} repas
                         </span>
                       </div>
@@ -526,7 +576,7 @@ export function KitchenDashboard() {
                           >
                             <span className="truncate pr-2">
                               {product.name}
-                              <span className="ml-2 text-[10px] uppercase text-sage">
+                              <span className="ml-2 text-[10px] uppercase text-mist">
                                 {product.productType === 'MAIN'
                                   ? 'plat'
                                   : product.productType === 'SIDE'
@@ -538,7 +588,7 @@ export function KitchenDashboard() {
                           </li>
                         ))}
                         {slot.products.length === 0 && (
-                          <li className="text-sm text-sage italic">Aucune commande</li>
+                          <li className="text-sm text-mist italic">Aucune commande</li>
                         )}
                       </ul>
                     </article>
@@ -548,26 +598,26 @@ export function KitchenDashboard() {
             </div>
           </section>
 
-          <section className="rounded-2xl border border-sage/20 bg-night-2 p-5 sm:p-6">
+          <section className="rounded-2xl border border-mist/20 bg-deep-2 p-5 sm:p-6">
             <div className="flex items-center gap-2">
-              <Info className="size-5 text-glow" />
+              <Info className="size-5 text-highlight" />
               <h2 className="font-display text-2xl font-bold">Analyse de production</h2>
             </div>
-            <p className="mt-1 text-sm text-sage">
+            <p className="mt-1 text-sm text-mist">
               Indications issues des données de démonstration ; elles aident à ajuster la
               production, sans garantir un volume final.
             </p>
             <div className="mt-5 grid gap-4 md:grid-cols-2">
               {forecastQuery.isLoading ? (
                 <>
-                  <div className="h-28 animate-pulse rounded-xl bg-night" />
-                  <div className="h-28 animate-pulse rounded-xl bg-night" />
+                  <div className="h-28 animate-pulse rounded-xl bg-deep" />
+                  <div className="h-28 animate-pulse rounded-xl bg-deep" />
                 </>
               ) : forecasts.length ? (
-                forecasts.map((forecast) => (
+                demandForecasts.map((forecast) => (
                   <article
                     key={forecast.mealId}
-                    className="rounded-xl border border-sage/20 bg-night p-4"
+                    className="rounded-xl border border-mist/20 bg-deep p-4"
                   >
                     <div className="flex gap-3">
                       <span className="pt-1">
@@ -576,30 +626,30 @@ export function KitchenDashboard() {
                         ) : forecast.level === 'warn' || forecast.method === 'FALLBACK' ? (
                           <AlertTriangle className="size-5 text-warn" aria-label="Vigilance" />
                         ) : (
-                          <Info className="size-5 text-glow" aria-label="Information" />
+                          <Info className="size-5 text-highlight" aria-label="Information" />
                         )}
                       </span>
                       <div className="min-w-0">
                         <div className="flex flex-wrap items-center gap-2">
                           <h3 className="font-bold">{forecast.mealName ?? 'Repas'}</h3>
                           {forecast.source ? (
-                            <span className="rounded-full border border-sage/30 px-2 py-0.5 text-[11px] font-bold text-sage">
+                            <span className="rounded-full border border-mist/30 px-2 py-0.5 text-[11px] font-bold text-mist">
                               {forecast.source === 'gemini'
                                 ? 'Expliqué par Gemini'
                                 : 'Calcul local'}
                             </span>
                           ) : null}
                         </div>
-                        <p className="mt-1 text-sm text-sage">
+                        <p className="mt-1 text-sm text-mist">
                           Cible : {forecast.predicted} repas · fourchette {forecast.lower}–
                           {forecast.upper}
                         </p>
-                        <p className="mt-2 text-sm text-paper/85">
+                        <p className="mt-2 text-sm text-surface/85">
                           {forecast.explanation ??
                             'Estimation générée à partir des données disponibles.'}
                         </p>
                         {forecast.suggestedAction ? (
-                          <p className="mt-2 text-sm font-bold text-glow">
+                          <p className="mt-2 text-sm font-bold text-highlight">
                             → {forecast.suggestedAction}
                           </p>
                         ) : null}
@@ -608,8 +658,21 @@ export function KitchenDashboard() {
                   </article>
                 ))
               ) : (
-                <p className="text-sage">Aucune recommandation pour cette date.</p>
+                <p className="text-mist">Aucune recommandation pour cette date.</p>
               )}
+              {!forecastQuery.isLoading && idleForecasts.length > 0 ? (
+                <article className="rounded-xl border border-dashed border-mist/25 bg-deep p-4 md:col-span-2">
+                  <p className="text-sm font-bold text-surface">
+                    Sans demande prévue pour ce service
+                  </p>
+                  <p className="mt-1 text-sm text-mist">
+                    {idleForecasts.map((forecast) => forecast.mealName ?? 'Produit').join(' · ')}
+                  </p>
+                  <p className="mt-2 text-sm font-bold text-highlight">
+                    → Ne pas préparer à l’avance, sauf commande de dernière minute.
+                  </p>
+                </article>
+              ) : null}
             </div>
           </section>
         </div>

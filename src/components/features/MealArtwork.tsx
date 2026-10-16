@@ -1,9 +1,9 @@
 export function MealArtwork({ vegetarian = false }: { vegetarian?: boolean }) {
   return (
     <svg viewBox="0 0 360 230" className="meal-plate h-full w-full" aria-hidden="true">
-      <ellipse cx="180" cy="128" rx="126" ry="91" fill="#fffdf5" />
-      <ellipse cx="180" cy="128" rx="109" ry="76" fill="#f4ebd6" />
-      <ellipse cx="180" cy="128" rx="99" ry="67" fill="#fffaf0" />
+      <ellipse cx="180" cy="128" rx="126" ry="91" fill="#ffffff" />
+      <ellipse cx="180" cy="128" rx="109" ry="76" fill="#e4f3f9" />
+      <ellipse cx="180" cy="128" rx="99" ry="67" fill="#fbfeff" />
       <g
         fill={vegetarian ? '#df6034' : '#c57432'}
         stroke={vegetarian ? '#bd4423' : '#a85527'}

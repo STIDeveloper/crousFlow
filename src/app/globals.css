@@ -4,50 +4,75 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/*
+ * Direction artistique « Campus cyan » : la grammaire visuelle de l'écosystème
+ * de paiement étudiant (cyan lumineux, cercles, pilules, Raleway) appliquée à CrousFlow.
+ * Voir DESIGN.md. Aucune couleur codée en dur dans les composants : uniquement ces tokens.
+ */
 @theme {
-  --color-paper: #fff7e7;
-  --color-ink: #263d2c;
-  --color-forest: #245642;
-  --color-tomato: #d94329;
-  --color-sage: #e3ead5;
-  --color-ok: oklch(0.7 0.15 150);
-  --color-warn: oklch(0.8 0.15 70);
-  --color-danger: oklch(0.6 0.2 20);
-  --color-night: #142c23;
-  --color-night-2: #203d30;
-  --color-glow: #ffc857;
+  /* Marque : cyan */
+  --color-brand: #01abd5;
+  --color-brand-light: #45cef8;
+  --color-brand-soft: #d9f2fb;
+  --color-brand-deep: #006580;
 
-  --font-sans: var(--font-geist-sans), sans-serif;
-  --font-mono: var(--font-geist-mono), monospace;
-  --font-display: var(--font-fraunces), serif;
+  /* Accent lime (actions « + », succès sur fond sombre) */
+  --color-leaf: #91c448;
 
-  --color-background: var(--color-paper);
+  /* Neutres */
+  --color-canvas: #f3f9fc;
+  --color-surface: #ffffff;
+  --color-ink: #10242d;
+  --color-ink-soft: #4f6370;
+  --color-line: #d8e8f0;
+
+  /* Rôles (surchargés par le thème sombre .theme-staff) */
+  --color-primary: #007f9f;
+  --color-primary-foreground: #ffffff;
+  --color-highlight: #01abd5;
+  --color-mist: #e3f3fa;
+  --color-deep: #0a1c24;
+  --color-deep-2: #102b36;
+
+  /* États */
+  --color-ok: #2b7f36;
+  --color-warn: #f2a900;
+  --color-danger: #d2242c;
+
+  --font-sans: var(--font-raleway), system-ui, sans-serif;
+  --font-display: var(--font-raleway), system-ui, sans-serif;
+  --font-ui: var(--font-geist-sans), system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+
+  --radius-card: 1.5rem;
+
+  --shadow-card: 0 1px 2px rgb(16 36 45 / 0.04), 0 8px 24px rgb(0 127 159 / 0.08);
+  --shadow-float: 0 18px 50px rgb(0 101 128 / 0.18);
+
+  --color-background: var(--color-canvas);
   --color-foreground: var(--color-ink);
 
-  --color-card: var(--color-paper);
+  --color-card: var(--color-surface);
   --color-card-foreground: var(--color-ink);
 
-  --color-popover: var(--color-paper);
+  --color-popover: var(--color-surface);
   --color-popover-foreground: var(--color-ink);
 
-  --color-primary: var(--color-forest);
-  --color-primary-foreground: var(--color-paper);
-
-  --color-secondary: var(--color-sage);
+  --color-secondary: var(--color-mist);
   --color-secondary-foreground: var(--color-ink);
 
-  --color-muted: var(--color-sage);
-  --color-muted-foreground: var(--color-ink);
+  --color-muted: var(--color-mist);
+  --color-muted-foreground: var(--color-ink-soft);
 
-  --color-accent: var(--color-tomato);
-  --color-accent-foreground: var(--color-paper);
+  --color-accent: var(--color-brand-soft);
+  --color-accent-foreground: var(--color-ink);
 
   --color-destructive: var(--color-danger);
-  --color-destructive-foreground: var(--color-paper);
+  --color-destructive-foreground: var(--color-surface);
 
-  --color-border: var(--color-sage);
-  --color-input: var(--color-sage);
-  --color-ring: var(--color-forest);
+  --color-border: var(--color-line);
+  --color-input: var(--color-line);
+  --color-ring: var(--color-primary);
 
   --radius-lg: var(--radius);
   --radius-md: calc(var(--radius) - 2px);
@@ -56,13 +81,26 @@
 
 @layer base {
   :root {
-    --background: var(--color-paper);
+    --background: var(--color-canvas);
     --foreground: var(--color-ink);
-    --radius: 0.5rem;
+    --radius: 0.75rem;
   }
 
-  .dark {
-    color-scheme: light;
+  /* Espace personnel (cuisine, administration) : bleu nuit, accents cyan et lime. */
+  .theme-staff {
+    --color-surface: #ffffff;
+    --color-primary: #45cef8;
+    --color-primary-foreground: #0a1c24;
+    --color-highlight: #45cef8;
+    --color-mist: #a9c7d3;
+    --color-deep: #0a1c24;
+    --color-deep-2: #12303c;
+    --color-line: #1f4655;
+    --color-ok: #a6d85b;
+    --color-warn: #ffc94a;
+    --color-danger: #ff6b6b;
+    --font-sans: var(--font-geist-sans), system-ui, sans-serif;
+    color-scheme: dark;
   }
 
   * {
@@ -70,15 +108,13 @@
   }
   body {
     @apply bg-background text-foreground;
+    font-variant-numeric: lining-nums;
   }
 }
 
-body {
-  background: #fff7e7;
-}
 ::selection {
-  background: #ffc857;
-  color: #142c23;
+  background: var(--color-brand-light);
+  color: var(--color-ink);
 }
 button,
 a,
@@ -91,36 +127,47 @@ a {
   cursor: pointer;
 }
 :focus-visible {
-  outline: 3px solid #d94329;
-  outline-offset: 4px;
+  outline: 3px solid var(--color-highlight);
+  outline-offset: 3px;
 }
+
+/* Bandeau signature : dégradé ciel → cyan. Le texte posé dessus est en encre (contraste AA). */
+.sky-gradient {
+  background:
+    radial-gradient(120% 140% at 85% -20%, rgb(255 255 255 / 0.45), transparent 55%),
+    linear-gradient(160deg, #7fdcf8 0%, #2ec2ec 45%, #01abd5 100%);
+}
+/* Version profonde pour les textes blancs (≥ 4,5:1 sur toute la surface). */
+.deep-gradient {
+  background: linear-gradient(150deg, #007f9f 0%, #006a86 55%, #005266 100%);
+}
+/* Cercles concentriques en filigrane, comme les ondes d'un paiement sans contact. */
+.ripple {
+  background:
+    radial-gradient(circle at center, transparent 0 38%, rgb(255 255 255 / 0.18) 38.2% 38.8%, transparent 39%),
+    radial-gradient(circle at center, transparent 0 52%, rgb(255 255 255 / 0.14) 52.2% 52.8%, transparent 53%),
+    radial-gradient(circle at center, transparent 0 66%, rgb(255 255 255 / 0.1) 66.2% 66.8%, transparent 67%);
+}
+
 .food-card {
-  box-shadow: 0 8px 24px #754b2310;
+  box-shadow: var(--shadow-card);
   transition:
     box-shadow 0.25s,
     transform 0.25s;
 }
 .food-card:hover {
-  box-shadow: 0 18px 40px #754b2320;
-}
-.meal-art {
-  background: #f5b84d;
-  position: relative;
-  overflow: hidden;
-}
-.meal-art:nth-child(2n) {
-  background: #dfebc8;
+  box-shadow: var(--shadow-float);
 }
 .meal-plate {
-  filter: drop-shadow(0 14px 10px #60330b26);
+  filter: drop-shadow(0 12px 10px rgb(0 101 128 / 0.18));
   transition: transform 0.4s ease;
 }
 .food-card:hover .meal-plate {
   transform: rotate(-5deg) scale(1.04);
 }
 .visual-kicker {
-  font-size: 0.7rem;
-  letter-spacing: 0.18em;
+  font-size: 0.72rem;
+  letter-spacing: 0.16em;
   font-weight: 800;
   text-transform: uppercase;
 }

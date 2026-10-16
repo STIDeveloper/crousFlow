@@ -140,14 +140,14 @@ export function KitchenTicketDesk({
 
   return (
     <section
-      className="rounded-2xl border border-sage/20 bg-night-2 p-5 sm:p-6"
+      className="rounded-2xl border border-mist/20 bg-deep-2 p-5 sm:p-6"
       aria-label="Retrait et paiement"
     >
       <div className="flex items-center gap-2">
-        <Search className="size-5 text-glow" />
+        <Search className="size-5 text-highlight" />
         <h2 className="font-display text-2xl font-bold">Retrait au comptoir</h2>
       </div>
-      <p className="mt-1 text-sm text-sage">
+      <p className="mt-1 text-sm text-mist">
         Consultez le code ou scannez le QR, vérifiez la composition du plateau, constatez le débit
         Izly sur le TPE puis validez la remise.
       </p>
@@ -162,12 +162,12 @@ export function KitchenTicketDesk({
           placeholder="Scanner le QR ou saisir l’identifiant à 6 caractères (ex : A1B2C3)"
           autoComplete="off"
           disabled={!isOnline}
-          className="min-h-12 flex-1 rounded-xl border border-sage/45 bg-night px-4 font-mono text-base uppercase text-paper focus:outline-none focus:ring-2 focus:ring-glow"
+          className="min-h-12 flex-1 rounded-xl border border-mist/45 bg-deep px-4 font-mono text-base uppercase text-surface placeholder:font-sans placeholder:normal-case placeholder:text-mist focus:outline-none focus:ring-2 focus:ring-highlight"
         />
         <button
           type="submit"
           disabled={!token.trim() || inspectLoading || !isOnline}
-          className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-sage/20 px-6 font-bold hover:bg-sage/30 disabled:cursor-not-allowed disabled:opacity-50"
+          className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-mist/20 px-6 font-bold hover:bg-mist/30 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {inspectLoading ? (
             <Loader2 className="size-5 animate-spin motion-reduce:animate-none" />
@@ -180,13 +180,13 @@ export function KitchenTicketDesk({
 
       {inspection ? (
         <div
-          className={`mt-5 rounded-2xl border p-5 sm:p-6 ${isConsumed ? 'border-warn/40 bg-warn/10' : isCancelled ? 'border-danger/40 bg-danger/10' : 'border-glow/40 bg-glow/10'}`}
+          className={`mt-5 rounded-2xl border p-5 sm:p-6 ${isConsumed ? 'border-warn/40 bg-warn/10' : isCancelled ? 'border-danger/40 bg-danger/10' : 'border-highlight/40 bg-highlight/10'}`}
         >
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
               <div className="flex flex-wrap items-center gap-2">
                 <span
-                  className={`rounded-full px-2.5 py-0.5 text-xs font-bold uppercase tracking-wider ${isConsumed ? 'bg-warn text-night' : isCancelled ? 'bg-danger text-paper' : 'bg-glow text-night'}`}
+                  className={`rounded-full px-2.5 py-0.5 text-xs font-bold uppercase tracking-wider ${isConsumed ? 'bg-warn text-deep' : isCancelled ? 'bg-danger text-surface' : 'bg-highlight text-deep'}`}
                 >
                   {isConsumed ? 'Déjà consommé' : isCancelled ? 'Annulé' : 'Réservation confirmée'}
                 </span>
@@ -203,7 +203,7 @@ export function KitchenTicketDesk({
               <h3 className="mt-2 font-display text-2xl font-bold">
                 {mainMeal?.name ?? 'Plateau repas'}
               </h3>
-              <p className="mt-1 text-sm text-sage">
+              <p className="mt-1 text-sm text-mist">
                 {inspection.slot?.date
                   ? new Date(inspection.slot.date).toLocaleDateString('fr-FR', {
                       weekday: 'long',
@@ -217,31 +217,31 @@ export function KitchenTicketDesk({
               </p>
             </div>
             <div className="text-right">
-              <span className="rounded-full bg-paper/10 px-3 py-1 font-mono text-base font-bold text-glow">
+              <span className="rounded-full bg-surface/10 px-3 py-1 font-mono text-base font-bold text-highlight">
                 {formatPrice(inspection.priceCents)}
               </span>
-              <p className="mt-1 text-xs text-sage">Paiement Izly sur TPE</p>
+              <p className="mt-1 text-xs text-mist">Paiement Izly sur TPE</p>
             </div>
           </div>
 
           {/* Composition détaillée du plateau */}
-          <div className="mt-4 rounded-xl border border-sage/15 bg-night/80 p-4">
-            <h4 className="text-xs font-bold uppercase tracking-wider text-sage mb-2.5">
+          <div className="mt-4 rounded-xl border border-mist/15 bg-deep/80 p-4">
+            <h4 className="text-xs font-bold uppercase tracking-wider text-mist mb-2.5">
               Composition du plateau
             </h4>
             <ul className="space-y-2 text-sm">
               <li className="flex items-center gap-2">
-                <span className="rounded-md bg-tomato/20 px-2 py-0.5 text-xs font-bold text-tomato">
+                <span className="rounded-md bg-primary/20 px-2 py-0.5 text-xs font-bold text-primary">
                   Plat principal
                 </span>
-                <span className="font-medium text-paper">{mainMeal?.name ?? 'Non spécifié'}</span>
+                <span className="font-medium text-surface">{mainMeal?.name ?? 'Non spécifié'}</span>
               </li>
               {sideItems.map((item, idx) => (
                 <li key={idx} className="flex items-center gap-2">
-                  <span className="rounded-md bg-sage/20 px-2 py-0.5 text-xs font-bold text-sage">
+                  <span className="rounded-md bg-mist/20 px-2 py-0.5 text-xs font-bold text-mist">
                     {getItemLabel(item.kind, item.category)}
                   </span>
-                  <span className="font-medium text-paper">{item.name}</span>
+                  <span className="font-medium text-surface">{item.name}</span>
                 </li>
               ))}
             </ul>
@@ -264,21 +264,21 @@ export function KitchenTicketDesk({
               Cette réservation a été annulée par l’étudiant.
             </div>
           ) : (
-            <form onSubmit={validate} className="mt-5 border-t border-glow/20 pt-4">
+            <form onSubmit={validate} className="mt-5 border-t border-highlight/20 pt-4">
               <label className="flex min-h-11 items-center gap-3 text-sm font-bold cursor-pointer">
                 <input
                   type="checkbox"
                   checked={paymentObserved}
                   onChange={(event) => setPaymentObserved(event.target.checked)}
                   disabled={!isOnline}
-                  className="size-5 rounded border-sage/40 bg-night text-glow focus:ring-glow"
+                  className="size-5 rounded border-mist/40 bg-deep text-highlight focus:ring-highlight"
                 />
                 Paiement Izly ({formatPrice(inspection.priceCents)}) constaté sur le terminal CROUS
               </label>
               <button
                 type="submit"
                 disabled={!paymentObserved || validateLoading || !isOnline}
-                className="mt-4 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-glow px-5 font-bold text-night disabled:cursor-not-allowed disabled:opacity-50 transition-opacity"
+                className="mt-4 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-highlight px-5 font-bold text-deep disabled:cursor-not-allowed disabled:opacity-50 transition-opacity"
               >
                 {validateLoading ? (
                   <Loader2 className="size-5 animate-spin motion-reduce:animate-none" />
