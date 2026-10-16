@@ -16,8 +16,8 @@ CrousFlow permet la réservation à l'avance, consolide les données pour la cui
 
 - **Framework** : Next.js 16.4 + React 19.3
 - **Base de données** : Prisma 7 + SQLite (better-sqlite3)
-- **UI** : Tailwind 4.3 + shadcn/ui + motion
-- **IA** : Vercel AI SDK + @ai-sdk/google (gemini-3.5-flash-lite, configurable via `GEMINI_MODEL`)
+- **UI** : Tailwind 4.3 + shadcn/ui + motion, direction artistique « Campus cyan » (voir [`DESIGN.md`](./DESIGN.md))
+- **IA** : Vercel AI SDK + @ai-sdk/google (gemini-2.5-flash-lite, configurable via `GEMINI_MODEL`)
 - **QA** : Vitest + Playwright
 
 ## Installation
@@ -98,7 +98,8 @@ Application : [`screenshots/`](./screenshots). Chaîne au travail : [`screenshot
 | | |
 | --- | --- |
 | ![Accueil](screenshots/01-home-desktop.png) | ![Menu de la semaine](screenshots/03-menu-desktop.png) |
-| ![Tickets QR](screenshots/05-tickets-desktop.png) | ![Cuisine](screenshots/07-kitchen-dark-desktop.png) |
+| ![Composer son repas](screenshots/12-menu-composer-desktop.png) | ![Tickets QR](screenshots/05-tickets-desktop.png) |
+| ![Ticket sur mobile](screenshots/13-tickets-mobile.png) | ![Cuisine](screenshots/07-kitchen-dark-desktop.png) |
 | ![Console chaos 24/24](screenshots/09-chaos-dark-desktop.png) | ![CI verte](screenshots/chaine/04-ci-github-actions.png) |
 | ![Explications Gemini en cuisine](screenshots/11-kitchen-ia-gemini.png) | ![Ticket bidon refusé](screenshots/10-kitchen-ticket-refuse.png) |
 | ![Tests](screenshots/chaine/01-tests-vitest.png) | ![Garde-fou des frontières](screenshots/chaine/02-garde-fou-frontieres.png) |
