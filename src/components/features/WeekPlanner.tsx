@@ -192,7 +192,7 @@ export function WeekPlanner({ canReserve = false }: { canReserve?: boolean }) {
             </div>
             <span
               aria-hidden="true"
-              className="absolute right-2 top-2 grid size-12 place-items-center rounded-full bg-leaf text-surface shadow-md sm:right-3 sm:top-3"
+              className="absolute -right-1 -top-1 grid size-11 place-items-center rounded-full bg-leaf text-surface shadow-md ring-4 ring-surface/60 sm:right-2 sm:top-2 sm:size-12"
             >
               <Plus className="size-6" strokeWidth={3} />
             </span>

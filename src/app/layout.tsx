@@ -35,10 +35,14 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="fr" suppressHydrationWarning>
-      <body
-        className={`${raleway.variable} ${geistSans.variable} ${geistMono.variable} bg-canvas text-ink font-sans antialiased`}
-      >
+    // Les variables de police doivent exister sur <html> : les tokens Tailwind (--font-sans,
+    // --font-display) sont déclarés sur :root et y résolvent var(--font-raleway).
+    <html
+      lang="fr"
+      className={`${raleway.variable} ${geistSans.variable} ${geistMono.variable}`}
+      suppressHydrationWarning
+    >
+      <body className="bg-canvas font-sans text-ink antialiased">
         <Providers>
           {children}
           <Toaster position="top-center" richColors closeButton />
