@@ -46,12 +46,19 @@ export async function GET() {
       const dayStart = new Date(d.setUTCHours(0, 0, 0, 0))
       const dayEnd = new Date(d.setUTCHours(23, 59, 59, 999))
 
-      const count = await db.reservation.count({
-        where: { createdAt: { gte: dayStart, lte: dayEnd } },
-      })
+      const [count, noShows] = await Promise.all([
+        db.reservation.count({
+          where: { createdAt: { gte: dayStart, lte: dayEnd } },
+        }),
+        // Les non-retraits se rattachent au jour de service, pas au jour de réservation.
+        db.reservation.count({
+          where: { status: 'NO_SHOW', slot: { date: { gte: dayStart, lte: dayEnd } } },
+        }),
+      ])
       chartData.push({
         date: d.toLocaleDateString('fr-FR', { month: 'short', day: 'numeric' }),
         reservations: count,
+        noShows,
       })
     }
 
