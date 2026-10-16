@@ -397,7 +397,7 @@ Déclenchement : `push` et `pull_request`. Jobs : installation (cache pnpm) → 
 | --------------- | ----------------------------------------------------------------------------------------------------------------- |
 | Originalité     | Idée personnelle, problème réel : réservation hebdomadaire de plats chauds pour contourner le manque de personnel |
 | Utilité         | Moins de file, moins de gaspillage, aide aux étudiants précaires, outil déployable                                |
-| Style et beauté | `DESIGN.md` : « Cantine éditoriale », deux ambiances, mouvement soigné                                            |
+| Style et beauté | `DESIGN.md` : « Campus cyan », deux ambiances, mouvement soigné                                                  |
 | Crédibilité     | Rôles, règles métier, prévision évaluée par MAE/MAPE, audit, export                                               |
 | Solidité        | Console de robustesse (24 cas), transactions, tests de concurrence, CI                                            |
 | Harness complet | 12 agents, protocole d'orchestration, portes, hooks, propriété des chemins vérifiée                               |
